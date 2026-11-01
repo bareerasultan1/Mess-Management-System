@@ -1,0 +1,60 @@
+# Root .gitignore for Mess Management System
+# Generated for Mahvash Imran (2023294) — Billing & Payment Module
+
+# ──────────────────────────────────────────
+# Maven build outputs  
+# (these are generated files — never commit them)
+# ──────────────────────────────────────────
+target/
+
+# ──────────────────────────────────────────
+# IDE-specific files
+# ──────────────────────────────────────────
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code Java
+.classpath
+.project
+.settings/
+.factorypath
+.vscode/
+
+# Eclipse
+*.launch
+*.prefs
+
+# ──────────────────────────────────────────
+# Operating System
+# ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ──────────────────────────────────────────
+# Log files (your app generates these at runtime)
+# ──────────────────────────────────────────
+logs/
+*.log
+
+# ──────────────────────────────────────────
+# SQLite database file (runtime data — not source)
+# ──────────────────────────────────────────
+*.db
+*.sqlite
+
+# ──────────────────────────────────────────
+# Java compiled class files
+# ──────────────────────────────────────────
+*.class
+
+# ──────────────────────────────────────────
+# Maven wrapper (optional — only if not using mvnw)
+# ──────────────────────────────────────────
+# .mvn/
+# mvnw
+# mvnw.cmd

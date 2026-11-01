@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ============================================================
+         PROJECT IDENTITY
+         This is Mahvash Imran's Billing & Payment module of the
+         Digital Mess Management System — GIKI SE423 / SE431.
+         ============================================================ -->
+    <groupId>com.giki.mess</groupId>
+    <artifactId>mess-management-system</artifactId>
+    <version>0.2.0-SNAPSHOT</version>
+    <name>Digital Mess Management System</name>
+    <description>Billing and Payment module for GIKI Mess Management System — Mahvash Imran (2023294)</description>
+
+    <!-- ============================================================
+         JAVA VERSION
+         We use Java 22 (what is installed on your machine).
+         ============================================================ -->
+    <properties>
+        <java.version>22</java.version>
+        <maven.compiler.source>22</maven.compiler.source>
+        <maven.compiler.target>22</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Library versions pinned here so upgrading is easy -->
+        <junit.version>5.10.2</junit.version>
+        <mockito.version>5.11.0</mockito.version>
+        <assertj.version>3.25.3</assertj.version>
+        <slf4j.version>2.0.13</slf4j.version>
+        <logback.version>1.5.6</logback.version>
+        <sqlite.version>3.45.3.0</sqlite.version>
+        <jacoco.version>0.8.12</jacoco.version>
+        <checkstyle.version>3.3.1</checkstyle.version>
+    </properties>
+
+    <!-- ============================================================
+         DEPENDENCIES
+         Maven downloads these automatically from the internet the
+         first time you run `mvn test`.  No manual JAR downloads!
+         ============================================================ -->
+    <dependencies>
+
+        <!-- ── TESTING ──────────────────────────────────────────── -->
+
+        <!-- JUnit 5: The testing framework. Lets you write @Test methods. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mockito: Creates fake ("mock") versions of interfaces for testing.
+             E.g. instead of a real database, tests use a fake ILedgerRepository. -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- AssertJ: Makes test assertions readable. E.g. assertThat(bill.getNetPayable()).isEqualTo(3500) -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ── LOGGING ───────────────────────────────────────────── -->
+
+        <!-- SLF4J: A logging API. Your code calls log.info("message").
+             The actual log output is handled by Logback below. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+
+        <!-- ── DATABASE ──────────────────────────────────────────── -->
+
+        <!-- SQLite JDBC: A tiny, file-based database. No server needed.
+             Perfect for this project — runs entirely inside your laptop. -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>${sqlite.version}</version>
+        </dependency>
+
+    </dependencies>
+
+    <!-- ============================================================
+         BUILD PLUGINS
+         These are tools Maven runs during your build process.
+         ============================================================ -->
+    <build>
+        <plugins>
+
+            <!-- ── Compiler Plugin ─────────────────────────────────
+                 Tells Maven to compile Java code using Java 22. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+
+            <!-- ── Surefire Plugin ─────────────────────────────────
+                 Runs your @Test methods when you type `mvn test`.
+                 The version here is important — must be >=3.x for JUnit 5. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
+
+            <!-- ── JaCoCo Plugin ───────────────────────────────────
+                 Measures how much of your code is covered by tests.
+                 After `mvn verify`, open target/site/jacoco/index.html
+                 in a browser to see the coloured coverage report. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- ── Checkstyle Plugin ───────────────────────────────
+                 Checks that your code follows style rules (SE431 SQA).
+                 Run manually: `mvn checkstyle:check`
+                 Reports go to: target/checkstyle-result.xml -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle.version}</version>
+                <configuration>
+                    <configLocation>google_checks.xml</configLocation>
+                    <failsOnError>false</failsOnError>
+                    <consoleOutput>true</consoleOutput>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>

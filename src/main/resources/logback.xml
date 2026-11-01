@@ -1,0 +1,41 @@
+<configuration>
+
+    <!-- Console appender: prints logs to the terminal when you run the app -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- Format: time  level  [thread]  logger  - message -->
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File appender: writes billing audit trail to a log file -->
+    <appender name="BILLING_AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/billing_audit.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- New log file each day, keep 30 days of history -->
+            <fileNamePattern>logs/billing_audit.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root logger: by default, log INFO and above to console -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <!-- Billing-specific logger: logs DEBUG level to both console and audit file -->
+    <logger name="com.giki.mess.billing" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="BILLING_AUDIT" />
+    </logger>
+
+    <!-- Payment-specific logger: also DEBUG + audit file -->
+    <logger name="com.giki.mess.payment" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="BILLING_AUDIT" />
+    </logger>
+
+</configuration>
