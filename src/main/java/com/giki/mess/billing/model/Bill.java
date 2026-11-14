@@ -114,7 +114,7 @@ public class Bill {
      * Called by PaymentService when a successful payment is reconciled.
      * Marks the bill as fully paid.
      */
-    public void markAsPaid() {
+    public synchronized void markAsPaid() {
         this.paymentStatus = PaymentStatus.PAID;
         this.netPayable    = Money.ZERO; // All settled
     }
@@ -122,7 +122,7 @@ public class Bill {
     /**
      * Called by a scheduled job when the due date passes and bill is not paid.
      */
-    public void markAsOverdue() {
+    public synchronized void markAsOverdue() {
         if (this.paymentStatus == PaymentStatus.UNPAID
                 || this.paymentStatus == PaymentStatus.PARTIALLY_PAID) {
             this.paymentStatus = PaymentStatus.OVERDUE;
@@ -135,7 +135,7 @@ public class Bill {
      *
      * @param amountPaid The amount received in this payment (PKR)
      */
-    public void applyPartialPayment(Money amountPaid) {
+    public synchronized void applyPartialPayment(Money amountPaid) {
         if (amountPaid == null || !amountPaid.isPositive()) {
             throw new IllegalArgumentException("Payment amount must be positive, got: " + amountPaid);
         }
@@ -144,6 +144,22 @@ public class Bill {
             this.paymentStatus = PaymentStatus.PAID;
         } else {
             this.paymentStatus = PaymentStatus.PARTIALLY_PAID;
+        }
+    }
+
+    /**
+     * Applies a settled payment in ONE atomic step: PAID if it covers what is still owed,
+     * otherwise PARTIALLY_PAID. Doing the comparison and the update under one lock is what
+     * stops two simultaneous payments from both reading the same old balance (lost update).
+     */
+    public synchronized void applyPayment(Money amountPaid) {
+        if (amountPaid == null || !amountPaid.isPositive()) {
+            throw new IllegalArgumentException("Payment amount must be positive, got: " + amountPaid);
+        }
+        if (amountPaid.compareTo(netPayable) >= 0) {
+            markAsPaid();
+        } else {
+            applyPartialPayment(amountPaid);
         }
     }
 
@@ -158,8 +174,8 @@ public class Bill {
     public Money getRebateAmount()    { return rebateAmount;   }
     public Money getFineAmount()      { return fineAmount;     }
     public Money getDiscountAmount()  { return discountAmount; }
-    public Money getNetPayable()      { return netPayable;     }
-    public PaymentStatus getPaymentStatus() { return paymentStatus; }
+    public synchronized Money getNetPayable() { return netPayable; }
+    public synchronized PaymentStatus getPaymentStatus() { return paymentStatus; }
 
     /**
      * Returns an UNMODIFIABLE view of the bill items.

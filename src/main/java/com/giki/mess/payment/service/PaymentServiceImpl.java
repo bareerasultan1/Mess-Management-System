@@ -156,11 +156,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         tx.markSuccess();
         ledger.creditAmount(tx.getAmount());
-        if (tx.getAmount().compareTo(bill.getNetPayable()) >= 0) {
-            bill.markAsPaid();
-        } else {
-            bill.applyPartialPayment(tx.getAmount());
-        }
+        bill.applyPayment(tx.getAmount());   // atomic: compare and update under one lock
         tx.markReconciled();
         ledgers.save(ledger);
         bills.save(bill);
