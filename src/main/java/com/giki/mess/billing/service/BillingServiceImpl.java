@@ -80,6 +80,11 @@ public class BillingServiceImpl implements BillingService {
         return bills.save(bill);
     }
 
+    @Override
+    public ItemizedInvoice generateItemizedInvoice(String billId) {
+        throw new UnsupportedOperationException("not implemented yet (TDD RED)");
+    }
+
     /**
      * Rebate rule: only runs of at least N consecutive registered absence days count
      * (N = threshold, default 3). Each counted day is credited rebatePercent of the daily

@@ -14,4 +14,11 @@ public interface BillingService {
      * @throws com.giki.mess.billing.exception.LedgerNotFoundException if the student has no ledger
      */
     Bill calculateMonthlyBill(String studentId, int month, int year, LocalDate asOfDate);
+
+    /**
+     * Builds the itemized breakdown of a stored bill.
+     *
+     * @throws com.giki.mess.billing.exception.BillNotFoundException if no such bill exists
+     */
+    ItemizedInvoice generateItemizedInvoice(String billId);
 }
