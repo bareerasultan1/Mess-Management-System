@@ -103,6 +103,12 @@ public class BillingServiceImpl implements BillingService {
     }
 
     @Override
+    public void recordMealSwipe(String studentId, MealType mealType,
+                                java.time.LocalDateTime scanTime, String eventId) {
+        throw new UnsupportedOperationException("not implemented yet (TDD RED)");
+    }
+
+    @Override
     public ItemizedInvoice generateItemizedInvoice(String billId) {
         Bill bill = bills.findById(billId).orElseThrow(() -> new BillNotFoundException(billId));
         Map<MealType, Integer> counts = new EnumMap<>(MealType.class);
