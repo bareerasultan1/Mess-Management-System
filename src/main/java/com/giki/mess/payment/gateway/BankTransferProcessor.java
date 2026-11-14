@@ -1,5 +1,6 @@
 package com.giki.mess.payment.gateway;
 
+import com.giki.mess.payment.model.PaymentCallback;
 import com.giki.mess.payment.model.PaymentChannel;
 import java.time.Clock;
 
@@ -11,5 +12,10 @@ public class BankTransferProcessor extends AbstractSignedProcessor {
 
     public BankTransferProcessor(String secret, Clock clock) {
         super(PaymentChannel.BANK_TRANSFER, secret, clock);
+    }
+
+    @Override
+    protected boolean extraChecks(PaymentCallback callback) {
+        return !callback.gatewayReference().isBlank();
     }
 }
