@@ -11,6 +11,8 @@ import com.giki.mess.repository.ILedgerRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class BillingServiceImpl implements BillingService {
 
@@ -48,9 +50,40 @@ public class BillingServiceImpl implements BillingService {
             base = base.plus(rate);
         }
 
+        Money rebate = calculateRebate(
+            attendance.registeredAbsences(studentId, month, year), month, year);
+
         LocalDate dueDate = LocalDate.of(year, month, 1).plusMonths(1).withDayOfMonth(tariff.dueDayOfNextMonth());
         Bill bill = new Bill(billId, studentId, month, year, dueDate,
-            base, Money.ZERO, Money.ZERO, Money.ZERO, items);
+            base, rebate, Money.ZERO, Money.ZERO, items);
         return bills.save(bill);
+    }
+
+    /**
+     * Rebate rule: only runs of at least N consecutive registered absence days count
+     * (N = threshold, default 3). Each counted day is credited rebatePercent of the daily
+     * rate. The number of counted days is capped (default 20).
+     */
+    private Money calculateRebate(Set<LocalDate> absences, int month, int year) {
+        TreeSet<LocalDate> days = new TreeSet<>();
+        for (LocalDate d : absences) {
+            if (d.getMonthValue() == month && d.getYear() == year) {
+                days.add(d);
+            }
+        }
+        int qualifyingDays = 0;
+        int run = 0;
+        LocalDate previous = null;
+        for (LocalDate day : days) {
+            run = (previous != null && previous.plusDays(1).equals(day)) ? run + 1 : 1;
+            if (run == tariff.absenceThresholdDays()) {
+                qualifyingDays += run;          // the whole run starts counting
+            } else if (run > tariff.absenceThresholdDays()) {
+                qualifyingDays++;               // each further day in the run
+            }
+            previous = day;
+        }
+        int counted = Math.min(qualifyingDays, tariff.maxRebateDays());
+        return tariff.dailyRate().percent(tariff.rebatePercent()).times(counted);
     }
 }
