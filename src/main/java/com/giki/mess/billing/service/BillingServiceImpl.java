@@ -4,13 +4,16 @@ import com.giki.mess.billing.config.TariffConfiguration;
 import com.giki.mess.billing.exception.LedgerNotFoundException;
 import com.giki.mess.billing.model.Bill;
 import com.giki.mess.billing.model.BillItem;
+import com.giki.mess.billing.model.StudentCategory;
 import com.giki.mess.billing.model.StudentLedger;
+import com.giki.mess.billing.strategy.BillingCalculationStrategy;
 import com.giki.mess.common.Money;
 import com.giki.mess.repository.IBillRepository;
 import com.giki.mess.repository.ILedgerRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -20,10 +23,13 @@ public class BillingServiceImpl implements BillingService {
     private final IBillRepository bills;
     private final AttendanceDataSource attendance;
     private final TariffConfiguration tariff;
+    private final Map<StudentCategory, BillingCalculationStrategy> strategies;
 
     public BillingServiceImpl(ILedgerRepository ledgers, IBillRepository bills,
-                              AttendanceDataSource attendance, TariffConfiguration tariff) {
+                              AttendanceDataSource attendance, TariffConfiguration tariff,
+                              Map<StudentCategory, BillingCalculationStrategy> strategies) {
         this.tariff = tariff;
+        this.strategies = strategies;
         this.ledgers = ledgers;
         this.bills = bills;
         this.attendance = attendance;

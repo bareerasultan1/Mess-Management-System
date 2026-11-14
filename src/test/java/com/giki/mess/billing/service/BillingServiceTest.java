@@ -8,6 +8,8 @@ import com.giki.mess.billing.model.MealType;
 import com.giki.mess.billing.model.PaymentStatus;
 import com.giki.mess.billing.model.StudentCategory;
 import com.giki.mess.billing.model.StudentLedger;
+import com.giki.mess.billing.strategy.BillingCalculationStrategy;
+import com.giki.mess.billing.strategy.BillingStrategies;
 import com.giki.mess.common.Money;
 import com.giki.mess.repository.persistence.InMemoryBillRepository;
 import com.giki.mess.repository.persistence.InMemoryLedgerRepository;
@@ -65,7 +67,8 @@ class BillingServiceTest {
         bills = new InMemoryBillRepository();
         attendance = new FakeAttendance();
         ledgers.save(new StudentLedger(STUDENT, StudentCategory.REGULAR));
-        service = new BillingServiceImpl(ledgers, bills, attendance, TariffConfiguration.defaults());
+        service = new BillingServiceImpl(ledgers, bills, attendance, TariffConfiguration.defaults(),
+            BillingStrategies.defaults(TariffConfiguration.defaults()));
     }
 
     @Test
@@ -146,5 +149,87 @@ class BillingServiceTest {
         Bill bill = service.calculateMonthlyBill(STUDENT, 11, 2026, END_OF_NOV);
 
         assertThat(bill.getNetPayable()).isEqualTo(Money.ZERO);
+    }
+
+    // ── Cycle 3: late fine and tariff strategies ──────────────────────────────
+
+    @Test
+    @DisplayName("late fine: 5% of the amount due when evaluated after the due date")
+    void lateFine_appliedAfterDueDate() {
+        attendance.addFullDays(1, 25); // 10,000 PKR
+
+        Bill bill = service.calculateMonthlyBill(STUDENT, 11, 2026, LocalDate.of(2026, 12, 11));
+
+        assertThat(bill.getFineAmount()).isEqualTo(Money.pkr(500));
+        assertThat(bill.getNetPayable()).isEqualTo(Money.pkr(10_500));
+    }
+
+    @Test
+    @DisplayName("no fine on the due date itself (boundary 10th) or before it")
+    void lateFine_notAppliedOnOrBeforeDueDate() {
+        attendance.addFullDays(1, 25);
+
+        Bill onDue = service.calculateMonthlyBill(STUDENT, 11, 2026, LocalDate.of(2026, 12, 10));
+        Bill before = service.calculateMonthlyBill(STUDENT, 11, 2026, LocalDate.of(2026, 12, 9));
+
+        assertThat(onDue.getFineAmount()).isEqualTo(Money.ZERO);
+        assertThat(before.getFineAmount()).isEqualTo(Money.ZERO);
+    }
+
+    @Test
+    @DisplayName("fine is calculated on the amount after rebate")
+    void lateFine_calculatedAfterRebate() {
+        attendance.addFullDays(1, 20);  // 8,000
+        absentDays(21, 22, 23);         // rebate 960 -> 7,040 -> fine 5% = 352
+
+        Bill bill = service.calculateMonthlyBill(STUDENT, 11, 2026, LocalDate.of(2026, 12, 20));
+
+        assertThat(bill.getFineAmount()).isEqualTo(Money.pkr(352));
+    }
+
+    @Test
+    @DisplayName("subsidized student pays reduced meal rates (60%)")
+    void subsidizedStrategy_reducedRates() {
+        ledgers.save(new StudentLedger("2023111", StudentCategory.SUBSIDIZED));
+        attendance.addFullDays(1, 10); // regular price 4,000 -> subsidized 2,400
+
+        Bill bill = service.calculateMonthlyBill("2023111", 11, 2026, END_OF_NOV);
+
+        assertThat(bill.getBaseAmount()).isEqualTo(Money.pkr(2_400));
+    }
+
+    @Test
+    @DisplayName("scholarship student gets 25% off the net meal cost")
+    void scholarStrategy_discount() {
+        ledgers.save(new StudentLedger("2023222", StudentCategory.SCHOLAR));
+        attendance.addFullDays(1, 20); // 8,000
+
+        Bill bill = service.calculateMonthlyBill("2023222", 11, 2026, END_OF_NOV);
+
+        assertThat(bill.getDiscountAmount()).isEqualTo(Money.pkr(2_000));
+        assertThat(bill.getNetPayable()).isEqualTo(Money.pkr(6_000));
+    }
+
+    @Test
+    @DisplayName("a custom strategy can be injected without touching the service (OCP)")
+    void customStrategy_isUsed() {
+        BillingCalculationStrategy flat = new BillingCalculationStrategy() {
+            @Override
+            public Money rateFor(MealType mealType) {
+                return Money.pkr(10);
+            }
+
+            @Override
+            public Money discountOn(Money netMealCost) {
+                return Money.ZERO;
+            }
+        };
+        BillingService custom = new BillingServiceImpl(ledgers, bills, attendance,
+            TariffConfiguration.defaults(), java.util.Map.of(StudentCategory.REGULAR, flat));
+        attendance.addFullDays(1, 1);
+
+        Bill bill = custom.calculateMonthlyBill(STUDENT, 11, 2026, END_OF_NOV);
+
+        assertThat(bill.getBaseAmount()).isEqualTo(Money.pkr(30));
     }
 }
