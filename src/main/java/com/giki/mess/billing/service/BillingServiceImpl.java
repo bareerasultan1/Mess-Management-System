@@ -7,6 +7,7 @@ import com.giki.mess.billing.exception.LedgerNotFoundException;
 import com.giki.mess.billing.model.Bill;
 import com.giki.mess.billing.model.BillItem;
 import com.giki.mess.billing.model.MealType;
+import com.giki.mess.billing.model.PaymentStatus;
 import com.giki.mess.billing.model.StudentCategory;
 import com.giki.mess.billing.model.StudentLedger;
 import com.giki.mess.billing.strategy.BillingCalculationStrategy;
@@ -19,6 +20,7 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -48,6 +50,9 @@ public class BillingServiceImpl implements BillingService {
         if (month < 1 || month > 12) {
             throw new IllegalArgumentException("Month must be between 1 and 12, got: " + month);
         }
+        if (asOfDate == null) {
+            throw new IllegalArgumentException("asOfDate cannot be null");
+        }
         StudentLedger ledger = ledgers.findByStudentId(studentId)
             .orElseThrow(() -> new LedgerNotFoundException(studentId));
 
@@ -56,10 +61,20 @@ public class BillingServiceImpl implements BillingService {
             throw new InvalidTariffException("No tariff strategy for category " + ledger.getCategory());
         }
 
+        // A bill that already received a payment must never be recalculated or overwritten.
+        Optional<Bill> existing = bills.findByStudentAndMonth(studentId, month, year);
+        if (existing.isPresent() && (existing.get().getPaymentStatus() == PaymentStatus.PAID
+                || existing.get().getPaymentStatus() == PaymentStatus.PARTIALLY_PAID)) {
+            return existing.get();
+        }
+
         String billId = "BILL-" + studentId + "-" + year + "-" + month;
         List<BillItem> items = new ArrayList<>();
         Money base = Money.ZERO;
-        for (MealRecord meal : attendance.mealsFor(studentId, month, year)) {
+        List<MealRecord> meals = attendance.mealsFor(studentId, month, year);
+        Set<LocalDate> daysWithMeals = new HashSet<>();
+        for (MealRecord meal : meals) {
+            daysWithMeals.add(meal.scanTime().toLocalDate());
             Money rate = strategy.rateFor(meal.mealType());
             items.add(new BillItem(meal.eventId(), billId, studentId,
                 meal.scanTime(), meal.mealType(), rate));
@@ -71,7 +86,7 @@ public class BillingServiceImpl implements BillingService {
         }
 
         Money rebate = calculateRebate(
-            attendance.registeredAbsences(studentId, month, year), month, year, strategy);
+            attendance.registeredAbsences(studentId, month, year), daysWithMeals, month, year, strategy);
         Money mealCostAfterRebate = base.minus(rebate).floorAtZero();
         Money discount = strategy.discountOn(mealCostAfterRebate);
 
@@ -109,11 +124,12 @@ public class BillingServiceImpl implements BillingService {
      * (N = threshold, default 3). Each counted day is credited rebatePercent of the daily
      * rate. The number of counted days is capped (default 20).
      */
-    private Money calculateRebate(Set<LocalDate> absences, int month, int year,
+    private Money calculateRebate(Set<LocalDate> absences, Set<LocalDate> daysWithMeals,
+                                  int month, int year,
                                   BillingCalculationStrategy strategy) {
         TreeSet<LocalDate> days = new TreeSet<>();
         for (LocalDate d : absences) {
-            if (d.getMonthValue() == month && d.getYear() == year) {
+            if (d.getMonthValue() == month && d.getYear() == year && !daysWithMeals.contains(d)) {
                 days.add(d);
             }
         }
