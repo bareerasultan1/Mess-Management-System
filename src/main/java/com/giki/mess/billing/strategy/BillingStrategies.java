@@ -13,10 +13,10 @@ public final class BillingStrategies {
 
     public static Map<StudentCategory, BillingCalculationStrategy> defaults(TariffConfiguration tariff) {
         Map<StudentCategory, BillingCalculationStrategy> map = new EnumMap<>(StudentCategory.class);
-        BillingCalculationStrategy standard = new StandardBillingStrategy(tariff);
-        for (StudentCategory c : StudentCategory.values()) {
-            map.put(c, standard);
-        }
+        map.put(StudentCategory.REGULAR, new StandardBillingStrategy(tariff));
+        map.put(StudentCategory.SUBSIDIZED, new SubsidizedBillingStrategy(tariff));
+        map.put(StudentCategory.SCHOLAR, new ScholarshipBillingStrategy(tariff));
+        map.put(StudentCategory.FACULTY_GUEST, new GuestBillingStrategy(tariff));
         return map;
     }
 }

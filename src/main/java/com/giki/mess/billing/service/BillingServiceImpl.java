@@ -1,9 +1,11 @@
 package com.giki.mess.billing.service;
 
 import com.giki.mess.billing.config.TariffConfiguration;
+import com.giki.mess.billing.exception.InvalidTariffException;
 import com.giki.mess.billing.exception.LedgerNotFoundException;
 import com.giki.mess.billing.model.Bill;
 import com.giki.mess.billing.model.BillItem;
+import com.giki.mess.billing.model.MealType;
 import com.giki.mess.billing.model.StudentCategory;
 import com.giki.mess.billing.model.StudentLedger;
 import com.giki.mess.billing.strategy.BillingCalculationStrategy;
@@ -46,22 +48,35 @@ public class BillingServiceImpl implements BillingService {
         StudentLedger ledger = ledgers.findByStudentId(studentId)
             .orElseThrow(() -> new LedgerNotFoundException(studentId));
 
+        BillingCalculationStrategy strategy = strategies.get(ledger.getCategory());
+        if (strategy == null) {
+            throw new InvalidTariffException("No tariff strategy for category " + ledger.getCategory());
+        }
+
         String billId = "BILL-" + studentId + "-" + year + "-" + month;
         List<BillItem> items = new ArrayList<>();
         Money base = Money.ZERO;
         for (MealRecord meal : attendance.mealsFor(studentId, month, year)) {
-            Money rate = tariff.rateFor(meal.mealType());
+            Money rate = strategy.rateFor(meal.mealType());
             items.add(new BillItem(meal.eventId(), billId, studentId,
                 meal.scanTime(), meal.mealType(), rate));
             base = base.plus(rate);
         }
 
         Money rebate = calculateRebate(
-            attendance.registeredAbsences(studentId, month, year), month, year);
+            attendance.registeredAbsences(studentId, month, year), month, year, strategy);
+        Money mealCostAfterRebate = base.minus(rebate).floorAtZero();
+        Money discount = strategy.discountOn(mealCostAfterRebate);
 
-        LocalDate dueDate = LocalDate.of(year, month, 1).plusMonths(1).withDayOfMonth(tariff.dueDayOfNextMonth());
+        LocalDate dueDate = LocalDate.of(year, month, 1).plusMonths(1)
+            .withDayOfMonth(tariff.dueDayOfNextMonth());
+        Money fine = Money.ZERO;
+        if (asOfDate != null && asOfDate.isAfter(dueDate)) {
+            fine = mealCostAfterRebate.minus(discount).percent(tariff.lateFinePercent());
+        }
+
         Bill bill = new Bill(billId, studentId, month, year, dueDate,
-            base, rebate, Money.ZERO, Money.ZERO, items);
+            base, rebate, fine, discount, items);
         return bills.save(bill);
     }
 
@@ -70,7 +85,8 @@ public class BillingServiceImpl implements BillingService {
      * (N = threshold, default 3). Each counted day is credited rebatePercent of the daily
      * rate. The number of counted days is capped (default 20).
      */
-    private Money calculateRebate(Set<LocalDate> absences, int month, int year) {
+    private Money calculateRebate(Set<LocalDate> absences, int month, int year,
+                                  BillingCalculationStrategy strategy) {
         TreeSet<LocalDate> days = new TreeSet<>();
         for (LocalDate d : absences) {
             if (d.getMonthValue() == month && d.getYear() == year) {
@@ -90,6 +106,10 @@ public class BillingServiceImpl implements BillingService {
             previous = day;
         }
         int counted = Math.min(qualifyingDays, tariff.maxRebateDays());
-        return tariff.dailyRate().percent(tariff.rebatePercent()).times(counted);
+        Money dailyRate = Money.ZERO;
+        for (MealType type : MealType.values()) {
+            dailyRate = dailyRate.plus(strategy.rateFor(type));
+        }
+        return dailyRate.percent(tariff.rebatePercent()).times(counted);
     }
 }
