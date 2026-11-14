@@ -33,10 +33,9 @@ import java.util.concurrent.locks.ReentrantLock;
  *   We use a ReentrantLock to ensure only ONE thread can modify the balance
  *   at any given moment.  The other thread waits until the first finishes.
  *
- *   NOTE: The lock is declared here in Day 1 (the field is ready).
- *         The actual locking logic is activated in Day 4 (Concurrency Day)
- *         when we wire up the concurrent tests.  This shows architectural
- *         foresight — you don't bolt on thread safety later; you design for it upfront.
+ *   Every write AND every read goes through the lock. The concurrency tests
+ *   (StudentLedgerLockingTest, ConcurrentLedgerAndPaymentTest) prove it, and
+ *   docs/THREAD_SAFETY_STRATEGY.md explains the strategy.
  */
 public class StudentLedger {
 
