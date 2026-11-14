@@ -1,5 +1,6 @@
 package com.giki.mess.billing.model;
 
+import com.giki.mess.common.Money;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,7 +15,7 @@ import java.util.List;
  *
  * Fields explanation:
  * ───────────────────
- *  baseAmount   → Total PKR charged for all attended meals (before adjustments)
+ *  baseAmount   → Total money charged for all attended meals (before adjustments)
  *  rebateAmount → PKR deducted for registered absences of >= 3 consecutive days
  *  fineAmount   → PKR added as penalty if bill is not paid by due date (10th)
  *  discountAmount → PKR deducted for scholarship students (25% of net meals)
@@ -37,12 +38,12 @@ public class Bill {
     private final LocalDate dueDate; // Typically the 10th of the following month
     private final List<BillItem> items; // The itemized breakdown (audit trail)
 
-    // Monetary amounts (in PKR)
-    private final double baseAmount;
-    private final double rebateAmount;
-    private final double fineAmount;
-    private final double discountAmount;
-    private double netPayable;
+    // Monetary amounts (Money = exact whole paisa, never floating point)
+    private final Money baseAmount;
+    private final Money rebateAmount;
+    private final Money fineAmount;
+    private final Money discountAmount;
+    private Money netPayable;
 
     // Mutable state — only changes via controlled methods below
     private PaymentStatus paymentStatus;
@@ -52,8 +53,8 @@ public class Bill {
      * Called by BillingService.calculateMonthlyBill() at month-end.
      */
     public Bill(String billId, String studentId, int month, int year,
-                LocalDate dueDate, double baseAmount, double rebateAmount,
-                double fineAmount, double discountAmount, List<BillItem> items) {
+                LocalDate dueDate, Money baseAmount, Money rebateAmount,
+                Money fineAmount, Money discountAmount, List<BillItem> items) {
 
         // Defensive validation
         if (billId == null || billId.isBlank()) {
@@ -71,16 +72,23 @@ public class Bill {
         if (dueDate == null) {
             throw new IllegalArgumentException("Due date cannot be null");
         }
-        if (baseAmount < 0) {
+        if (baseAmount == null || rebateAmount == null
+                || fineAmount == null || discountAmount == null) {
+            throw new IllegalArgumentException("Monetary amounts cannot be null");
+        }
+        if (items == null) {
+            throw new IllegalArgumentException("Bill items list cannot be null");
+        }
+        if (baseAmount.isNegative()) {
             throw new IllegalArgumentException("Base amount cannot be negative");
         }
-        if (rebateAmount < 0) {
+        if (rebateAmount.isNegative()) {
             throw new IllegalArgumentException("Rebate amount cannot be negative");
         }
-        if (fineAmount < 0) {
+        if (fineAmount.isNegative()) {
             throw new IllegalArgumentException("Fine amount cannot be negative");
         }
-        if (discountAmount < 0) {
+        if (discountAmount.isNegative()) {
             throw new IllegalArgumentException("Discount amount cannot be negative");
         }
 
@@ -96,7 +104,7 @@ public class Bill {
         this.items          = new ArrayList<>(items); // Defensive copy — caller can't mutate our list
 
         // Calculate net payable: base - rebate + fine - discount, clamped at 0 minimum
-        this.netPayable     = Math.max(0, baseAmount - rebateAmount + fineAmount - discountAmount);
+        this.netPayable     = baseAmount.minus(rebateAmount).plus(fineAmount).minus(discountAmount).floorAtZero();
         this.paymentStatus  = PaymentStatus.UNPAID;
     }
 
@@ -108,7 +116,7 @@ public class Bill {
      */
     public void markAsPaid() {
         this.paymentStatus = PaymentStatus.PAID;
-        this.netPayable    = 0.0; // All settled
+        this.netPayable    = Money.ZERO; // All settled
     }
 
     /**
@@ -127,12 +135,12 @@ public class Bill {
      *
      * @param amountPaid The amount received in this payment (PKR)
      */
-    public void applyPartialPayment(double amountPaid) {
-        if (amountPaid <= 0) {
+    public void applyPartialPayment(Money amountPaid) {
+        if (amountPaid == null || !amountPaid.isPositive()) {
             throw new IllegalArgumentException("Payment amount must be positive, got: " + amountPaid);
         }
-        this.netPayable = Math.max(0, this.netPayable - amountPaid);
-        if (this.netPayable == 0) {
+        this.netPayable = this.netPayable.minus(amountPaid).floorAtZero();
+        if (this.netPayable.isZero()) {
             this.paymentStatus = PaymentStatus.PAID;
         } else {
             this.paymentStatus = PaymentStatus.PARTIALLY_PAID;
@@ -146,11 +154,11 @@ public class Bill {
     public int getMonth()              { return month;          }
     public int getYear()               { return year;           }
     public LocalDate getDueDate()      { return dueDate;        }
-    public double getBaseAmount()      { return baseAmount;     }
-    public double getRebateAmount()    { return rebateAmount;   }
-    public double getFineAmount()      { return fineAmount;     }
-    public double getDiscountAmount()  { return discountAmount; }
-    public double getNetPayable()      { return netPayable;     }
+    public Money getBaseAmount()      { return baseAmount;     }
+    public Money getRebateAmount()    { return rebateAmount;   }
+    public Money getFineAmount()      { return fineAmount;     }
+    public Money getDiscountAmount()  { return discountAmount; }
+    public Money getNetPayable()      { return netPayable;     }
     public PaymentStatus getPaymentStatus() { return paymentStatus; }
 
     /**
@@ -165,7 +173,7 @@ public class Bill {
     @Override
     public String toString() {
         return String.format(
-            "Bill{id='%s', student='%s', period=%d/%d, net=%.2f PKR, status=%s}",
+            "Bill{id='%s', student='%s', period=%d/%d, net=%s, status=%s}",
             billId, studentId, month, year, netPayable, paymentStatus);
     }
 }

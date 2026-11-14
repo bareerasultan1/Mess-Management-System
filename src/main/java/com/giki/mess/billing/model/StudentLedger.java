@@ -1,6 +1,6 @@
 package com.giki.mess.billing.model;
 
-import com.giki.mess.billing.exception.BillingException;
+import com.giki.mess.common.Money;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -50,11 +50,14 @@ public class StudentLedger {
         SUSPENDED
     }
 
+    /** A student owing more than this is suspended from the mess. */
+    public static final Money SUSPENSION_THRESHOLD = Money.pkr(10_000);
+
     private final String studentId;
     private final StudentCategory category; // Determines tariff strategy (Day 2)
 
     /** Current outstanding balance in PKR (positive = student owes money) */
-    private double balance;
+    private Money balance;
 
     /** Count of meals eaten this month not yet included in a formal Bill */
     private int unbilledMealCount;
@@ -87,7 +90,7 @@ public class StudentLedger {
         }
         this.studentId       = studentId;
         this.category        = category;
-        this.balance         = 0.0;
+        this.balance         = Money.ZERO;
         this.unbilledMealCount = 0;
         this.status          = AccountStatus.ACTIVE;
     }
@@ -102,14 +105,14 @@ public class StudentLedger {
      *
      * @param amount PKR amount to debit (must be positive)
      */
-    public void debitAmount(double amount) {
-        if (amount <= 0) {
+    public void debitAmount(Money amount) {
+        if (amount == null || !amount.isPositive()) {
             throw new IllegalArgumentException(
                 "Debit amount must be positive for student " + studentId + ", got: " + amount);
         }
         balanceLock.lock();
         try {
-            this.balance += amount;
+            this.balance = this.balance.plus(amount);
             this.unbilledMealCount++;
         } finally {
             // ALWAYS release the lock — even if an exception occurs
@@ -126,16 +129,16 @@ public class StudentLedger {
      *
      * @param amount PKR amount to credit (must be positive)
      */
-    public void creditAmount(double amount) {
-        if (amount <= 0) {
+    public void creditAmount(Money amount) {
+        if (amount == null || !amount.isPositive()) {
             throw new IllegalArgumentException(
                 "Credit amount must be positive for student " + studentId + ", got: " + amount);
         }
         balanceLock.lock();
         try {
-            this.balance = Math.max(0, this.balance - amount);
+            this.balance = this.balance.minus(amount).floorAtZero();
             // Reactivate account if payment brings balance to manageable level
-            if (this.balance == 0 && this.status == AccountStatus.SUSPENDED) {
+            if (this.balance.isZero() && this.status == AccountStatus.SUSPENDED) {
                 this.status = AccountStatus.ACTIVE;
             }
         } finally {
@@ -163,7 +166,7 @@ public class StudentLedger {
     public void suspendIfOverdue() {
         balanceLock.lock();
         try {
-            if (this.balance > 10_000.0) {
+            if (this.balance.isGreaterThan(SUSPENSION_THRESHOLD)) {
                 this.status = AccountStatus.SUSPENDED;
             }
         } finally {
@@ -175,7 +178,7 @@ public class StudentLedger {
 
     public String getStudentId()       { return studentId;        }
     public StudentCategory getCategory() { return category;       }
-    public double getBalance()         { return balance;          }
+    public Money getBalance()          { return balance;          }
     public int getUnbilledMealCount()  { return unbilledMealCount;}
     public AccountStatus getStatus()   { return status;           }
 
@@ -189,7 +192,7 @@ public class StudentLedger {
     @Override
     public String toString() {
         return String.format(
-            "StudentLedger{student='%s', category=%s, balance=%.2f PKR, unbilledMeals=%d, status=%s}",
+            "StudentLedger{student='%s', category=%s, balance=%s, unbilledMeals=%d, status=%s}",
             studentId, category, balance, unbilledMealCount, status);
     }
 }

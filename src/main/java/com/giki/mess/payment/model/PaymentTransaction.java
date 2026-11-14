@@ -1,5 +1,6 @@
 package com.giki.mess.payment.model;
 
+import com.giki.mess.common.Money;
 import java.time.LocalDateTime;
 
 /**
@@ -33,10 +34,13 @@ import java.time.LocalDateTime;
  */
 public class PaymentTransaction {
 
+    /** Maximum single online payment (decision: 50,000 PKR, used by validation and BVA tests). */
+    public static final Money MAX_AMOUNT = Money.pkr(50_000);
+
     private final String transactionId;
     private final String studentId;
     private final String billId;
-    private final double amount;            // Amount paid in PKR
+    private final Money amount;             // Amount paid
     private final PaymentChannel channel;  // JazzCash / EasyPaisa / Bank Transfer
     private final String idempotencyKey;   // Unique key for duplicate detection
     private final LocalDateTime createdAt; // When the transaction was initiated
@@ -55,7 +59,7 @@ public class PaymentTransaction {
      * @param idempotencyKey  Unique key for this specific payment attempt
      */
     public PaymentTransaction(String transactionId, String studentId, String billId,
-                              double amount, PaymentChannel channel, String idempotencyKey) {
+                              Money amount, PaymentChannel channel, String idempotencyKey) {
         // Defensive validation
         if (transactionId == null || transactionId.isBlank()) {
             throw new IllegalArgumentException("transactionId cannot be null or blank");
@@ -66,13 +70,13 @@ public class PaymentTransaction {
         if (billId == null || billId.isBlank()) {
             throw new IllegalArgumentException("billId cannot be null or blank");
         }
-        if (amount <= 0) {
+        if (amount == null || !amount.isPositive()) {
             throw new IllegalArgumentException(
-                "Payment amount must be positive, got: " + amount + " PKR");
+                "Payment amount must be positive, got: " + amount);
         }
-        if (amount > 100_000) {
+        if (amount.isGreaterThan(MAX_AMOUNT)) {
             throw new IllegalArgumentException(
-                "Payment amount exceeds maximum limit (100,000 PKR): " + amount);
+                "Payment amount exceeds maximum limit (" + MAX_AMOUNT + "): " + amount);
         }
         if (channel == null) {
             throw new IllegalArgumentException("PaymentChannel cannot be null");
@@ -121,7 +125,7 @@ public class PaymentTransaction {
     public String getTransactionId()     { return transactionId;  }
     public String getStudentId()         { return studentId;      }
     public String getBillId()            { return billId;         }
-    public double getAmount()            { return amount;         }
+    public Money getAmount()             { return amount;         }
     public PaymentChannel getChannel()   { return channel;        }
     public String getIdempotencyKey()    { return idempotencyKey; }
     public LocalDateTime getCreatedAt()  { return createdAt;      }
@@ -130,7 +134,7 @@ public class PaymentTransaction {
     @Override
     public String toString() {
         return String.format(
-            "PaymentTransaction{id='%s', student='%s', amount=%.2f PKR, channel=%s, status=%s}",
+            "PaymentTransaction{id='%s', student='%s', amount=%s, channel=%s, status=%s}",
             transactionId, studentId, amount, channel, status);
     }
 }

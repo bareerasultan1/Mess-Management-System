@@ -1,5 +1,6 @@
 package com.giki.mess.payment.model;
 
+import com.giki.mess.common.Money;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +18,7 @@ class PaymentTransactionTest {
     @Test
     @DisplayName("new transaction should start with INITIATED status")
     void newTransaction_shouldStartAsInitiated() {
-        PaymentTransaction tx = createSampleTransaction(3500.0);
+        PaymentTransaction tx = createSampleTransaction(Money.pkr(3500));
 
         assertThat(tx.getStatus()).isEqualTo(TransactionStatus.INITIATED);
     }
@@ -25,7 +26,7 @@ class PaymentTransactionTest {
     @Test
     @DisplayName("markSuccess should transition status to SUCCESS")
     void markSuccess_shouldSetStatusToSuccess() {
-        PaymentTransaction tx = createSampleTransaction(3500.0);
+        PaymentTransaction tx = createSampleTransaction(Money.pkr(3500));
         tx.markSuccess();
 
         assertThat(tx.getStatus()).isEqualTo(TransactionStatus.SUCCESS);
@@ -34,7 +35,7 @@ class PaymentTransactionTest {
     @Test
     @DisplayName("markFailed should transition status to FAILED")
     void markFailed_shouldSetStatusToFailed() {
-        PaymentTransaction tx = createSampleTransaction(3500.0);
+        PaymentTransaction tx = createSampleTransaction(Money.pkr(3500));
         tx.markFailed();
 
         assertThat(tx.getStatus()).isEqualTo(TransactionStatus.FAILED);
@@ -43,7 +44,7 @@ class PaymentTransactionTest {
     @Test
     @DisplayName("markReconciled should transition status to RECONCILED")
     void markReconciled_shouldSetStatusToReconciled() {
-        PaymentTransaction tx = createSampleTransaction(3500.0);
+        PaymentTransaction tx = createSampleTransaction(Money.pkr(3500));
         tx.markSuccess();
         tx.markReconciled();
 
@@ -53,7 +54,7 @@ class PaymentTransactionTest {
     @Test
     @DisplayName("markDuplicate should transition status to DUPLICATE")
     void markDuplicate_shouldSetStatusToDuplicate() {
-        PaymentTransaction tx = createSampleTransaction(3500.0);
+        PaymentTransaction tx = createSampleTransaction(Money.pkr(3500));
         tx.markDuplicate();
 
         assertThat(tx.getStatus()).isEqualTo(TransactionStatus.DUPLICATE);
@@ -62,7 +63,7 @@ class PaymentTransactionTest {
     @Test
     @DisplayName("createdAt should be set automatically and not be null")
     void createdAt_shouldBeSetAutomatically() {
-        PaymentTransaction tx = createSampleTransaction(3500.0);
+        PaymentTransaction tx = createSampleTransaction(Money.pkr(3500));
 
         assertThat(tx.getCreatedAt()).isNotNull();
     }
@@ -74,7 +75,7 @@ class PaymentTransactionTest {
     void constructor_withZeroAmount_shouldThrowException() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new PaymentTransaction(
-                "TXN-001", "2023294", "BILL-001", 0.0, PaymentChannel.JAZZCASH, "KEY-001"))
+                "TXN-001", "2023294", "BILL-001", Money.ZERO, PaymentChannel.JAZZCASH, "KEY-001"))
             .withMessageContaining("Payment amount must be positive");
     }
 
@@ -83,16 +84,16 @@ class PaymentTransactionTest {
     void constructor_withNegativeAmount_shouldThrowException() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new PaymentTransaction(
-                "TXN-001", "2023294", "BILL-001", -50.0, PaymentChannel.EASYPAISA, "KEY-001"))
+                "TXN-001", "2023294", "BILL-001", Money.pkr(-50), PaymentChannel.EASYPAISA, "KEY-001"))
             .withMessageContaining("Payment amount must be positive");
     }
 
     @Test
-    @DisplayName("amount above 100000 should throw IllegalArgumentException [BVA upper boundary]")
+    @DisplayName("amount above 50000.00 (50000.01) should throw IllegalArgumentException [BVA upper boundary]")
     void constructor_withAmountAboveLimit_shouldThrowException() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new PaymentTransaction(
-                "TXN-001", "2023294", "BILL-001", 100_001.0, PaymentChannel.BANK_TRANSFER, "KEY-001"))
+                "TXN-001", "2023294", "BILL-001", Money.ofPaisa(5_000_001), PaymentChannel.BANK_TRANSFER, "KEY-001"))
             .withMessageContaining("exceeds maximum limit");
     }
 
@@ -101,7 +102,7 @@ class PaymentTransactionTest {
     void constructor_withNullChannel_shouldThrowException() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new PaymentTransaction(
-                "TXN-001", "2023294", "BILL-001", 3500.0, null, "KEY-001"))
+                "TXN-001", "2023294", "BILL-001", Money.pkr(3500), null, "KEY-001"))
             .withMessageContaining("PaymentChannel cannot be null");
     }
 
@@ -110,13 +111,27 @@ class PaymentTransactionTest {
     void constructor_withBlankIdempotencyKey_shouldThrowException() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new PaymentTransaction(
-                "TXN-001", "2023294", "BILL-001", 3500.0, PaymentChannel.JAZZCASH, "  "))
+                "TXN-001", "2023294", "BILL-001", Money.pkr(3500), PaymentChannel.JAZZCASH, "  "))
             .withMessageContaining("idempotencyKey cannot be null or blank");
+    }
+
+    @Test
+    @DisplayName("amount exactly 50000.00 is accepted [BVA on-boundary]")
+    void constructor_withAmountAtLimit_isAccepted() {
+        PaymentTransaction tx = createSampleTransaction(Money.pkr(50_000));
+        assertThat(tx.getAmount()).isEqualTo(Money.pkr(50_000));
+    }
+
+    @Test
+    @DisplayName("smallest valid amount 0.01 is accepted [BVA lower boundary]")
+    void constructor_withOnePaisa_isAccepted() {
+        PaymentTransaction tx = createSampleTransaction(Money.ofPaisa(1));
+        assertThat(tx.getAmount()).isEqualTo(Money.ofPaisa(1));
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────
 
-    private PaymentTransaction createSampleTransaction(double amount) {
+    private PaymentTransaction createSampleTransaction(Money amount) {
         return new PaymentTransaction(
             "TXN-TEST-001",
             "2023294",

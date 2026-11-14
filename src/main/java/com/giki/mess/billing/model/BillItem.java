@@ -1,5 +1,6 @@
 package com.giki.mess.billing.model;
 
+import com.giki.mess.common.Money;
 import java.time.LocalDateTime;
 
 /**
@@ -35,7 +36,7 @@ public class BillItem {
     private final String studentId;      // Which student
     private final LocalDateTime scanTime; // Exact moment of mess scan
     private final MealType mealType;     // BREAKFAST / LUNCH / DINNER
-    private final double rateApplied;    // PKR rate charged for this meal
+    private final Money rateApplied;    // PKR rate charged for this meal
 
     /**
      * Creates a new BillItem.  All fields are required.
@@ -48,7 +49,7 @@ public class BillItem {
      * @param rateApplied The PKR rate charged for this specific meal
      */
     public BillItem(String itemId, String billId, String studentId,
-                    LocalDateTime scanTime, MealType mealType, double rateApplied) {
+                    LocalDateTime scanTime, MealType mealType, Money rateApplied) {
 
         // DEFENSIVE PROGRAMMING: validate every input before storing it
         // This is SE423 requirement (defensive programming criterion)
@@ -67,7 +68,7 @@ public class BillItem {
         if (mealType == null) {
             throw new IllegalArgumentException("BillItem mealType cannot be null");
         }
-        if (rateApplied <= 0) {
+        if (rateApplied == null || !rateApplied.isPositive()) {
             throw new IllegalArgumentException(
                 "BillItem rateApplied must be positive, got: " + rateApplied);
         }
@@ -87,11 +88,11 @@ public class BillItem {
     public String getStudentId()        { return studentId;  }
     public LocalDateTime getScanTime()  { return scanTime;   }
     public MealType getMealType()       { return mealType;   }
-    public double getRateApplied()      { return rateApplied; }
+    public Money getRateApplied()      { return rateApplied; }
 
     @Override
     public String toString() {
-        return String.format("BillItem{itemId='%s', student='%s', meal=%s, time=%s, rate=%.2f PKR}",
+        return String.format("BillItem{itemId='%s', student='%s', meal=%s, time=%s, rate=%s}",
                 itemId, studentId, mealType, scanTime, rateApplied);
     }
 }

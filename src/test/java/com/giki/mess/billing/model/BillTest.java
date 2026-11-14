@@ -1,5 +1,6 @@
 package com.giki.mess.billing.model;
 
+import com.giki.mess.common.Money;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -28,19 +29,19 @@ class BillTest {
     @Test
     @DisplayName("new Bill with valid inputs should start as UNPAID")
     void newBill_withValidInputs_shouldStartAsUnpaid() {
-        Bill bill = createSampleBill(3000.0, 0.0, 0.0, 0.0);
+        Bill bill = createSampleBill(Money.pkr(3000), Money.pkr(0), Money.pkr(0), Money.pkr(0));
 
         assertThat(bill.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
-        assertThat(bill.getNetPayable()).isEqualTo(3000.0);
+        assertThat(bill.getNetPayable()).isEqualTo(Money.pkr(3000));
     }
 
     @Test
     @DisplayName("net payable should equal: base - rebate + fine - discount")
     void netPayable_shouldFollowFormula() {
         // base=3000, rebate=400, fine=150, discount=0  →  net = 2750
-        Bill bill = createSampleBill(3000.0, 400.0, 150.0, 0.0);
+        Bill bill = createSampleBill(Money.pkr(3000), Money.pkr(400), Money.pkr(150), Money.pkr(0));
 
-        assertThat(bill.getNetPayable()).isEqualTo(2750.0);
+        assertThat(bill.getNetPayable()).isEqualTo(Money.pkr(2750));
     }
 
     @Test
@@ -48,25 +49,25 @@ class BillTest {
     void netPayable_shouldNeverBeNegative_whenRebateExceedsBase() {
         // Scenario: student registered absence for the whole month — rebate > base
         // The system must floor net payable at 0.0, not produce a negative bill
-        Bill bill = createSampleBill(1000.0, 2000.0, 0.0, 0.0);
+        Bill bill = createSampleBill(Money.pkr(1000), Money.pkr(2000), Money.pkr(0), Money.pkr(0));
 
-        assertThat(bill.getNetPayable()).isEqualTo(0.0);
+        assertThat(bill.getNetPayable()).isEqualTo(Money.pkr(0));
     }
 
     @Test
     @DisplayName("markAsPaid should set status PAID and zero the net payable")
     void markAsPaid_shouldSetStatusPaidAndZeroBalance() {
-        Bill bill = createSampleBill(3000.0, 0.0, 0.0, 0.0);
+        Bill bill = createSampleBill(Money.pkr(3000), Money.pkr(0), Money.pkr(0), Money.pkr(0));
         bill.markAsPaid();
 
         assertThat(bill.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
-        assertThat(bill.getNetPayable()).isEqualTo(0.0);
+        assertThat(bill.getNetPayable()).isEqualTo(Money.pkr(0));
     }
 
     @Test
     @DisplayName("markAsOverdue should transition UNPAID to OVERDUE")
     void markAsOverdue_fromUnpaid_shouldBecomeOverdue() {
-        Bill bill = createSampleBill(2000.0, 0.0, 0.0, 0.0);
+        Bill bill = createSampleBill(Money.pkr(2000), Money.pkr(0), Money.pkr(0), Money.pkr(0));
         bill.markAsOverdue();
 
         assertThat(bill.getPaymentStatus()).isEqualTo(PaymentStatus.OVERDUE);
@@ -75,7 +76,7 @@ class BillTest {
     @Test
     @DisplayName("markAsOverdue on a PAID bill should have no effect")
     void markAsOverdue_onPaidBill_shouldNotChangeStatus() {
-        Bill bill = createSampleBill(2000.0, 0.0, 0.0, 0.0);
+        Bill bill = createSampleBill(Money.pkr(2000), Money.pkr(0), Money.pkr(0), Money.pkr(0));
         bill.markAsPaid();
         bill.markAsOverdue(); // Should be ignored for already-paid bills
 
@@ -86,27 +87,27 @@ class BillTest {
     @Test
     @DisplayName("applyPartialPayment reduces net payable correctly")
     void applyPartialPayment_shouldReduceNetPayable() {
-        Bill bill = createSampleBill(3000.0, 0.0, 0.0, 0.0);
-        bill.applyPartialPayment(1000.0);
+        Bill bill = createSampleBill(Money.pkr(3000), Money.pkr(0), Money.pkr(0), Money.pkr(0));
+        bill.applyPartialPayment(Money.pkr(1000));
 
-        assertThat(bill.getNetPayable()).isEqualTo(2000.0);
+        assertThat(bill.getNetPayable()).isEqualTo(Money.pkr(2000));
         assertThat(bill.getPaymentStatus()).isEqualTo(PaymentStatus.PARTIALLY_PAID);
     }
 
     @Test
     @DisplayName("applyPartialPayment equal to full amount should mark bill as PAID")
     void applyPartialPayment_equalToFullAmount_shouldMarkPaid() {
-        Bill bill = createSampleBill(3000.0, 0.0, 0.0, 0.0);
-        bill.applyPartialPayment(3000.0);
+        Bill bill = createSampleBill(Money.pkr(3000), Money.pkr(0), Money.pkr(0), Money.pkr(0));
+        bill.applyPartialPayment(Money.pkr(3000));
 
         assertThat(bill.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
-        assertThat(bill.getNetPayable()).isEqualTo(0.0);
+        assertThat(bill.getNetPayable()).isEqualTo(Money.pkr(0));
     }
 
     @Test
     @DisplayName("getItems should return an unmodifiable list (defensive copy)")
     void getItems_shouldReturnUnmodifiableList() {
-        Bill bill = createSampleBill(3000.0, 0.0, 0.0, 0.0);
+        Bill bill = createSampleBill(Money.pkr(3000), Money.pkr(0), Money.pkr(0), Money.pkr(0));
 
         // The returned list must be unmodifiable — callers cannot tamper with bill items
         assertThatExceptionOfType(UnsupportedOperationException.class)
@@ -120,7 +121,7 @@ class BillTest {
     void constructor_withNullBillId_shouldThrowException() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Bill(null, "2023294", 11, 2026,
-                LocalDate.now(), 3000.0, 0.0, 0.0, 0.0, Collections.emptyList()))
+                LocalDate.now(), Money.pkr(3000), Money.ZERO, Money.ZERO, Money.ZERO, Collections.emptyList()))
             .withMessageContaining("Bill ID cannot be null or blank");
     }
 
@@ -129,7 +130,7 @@ class BillTest {
     void constructor_withInvalidMonth_shouldThrowException() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Bill("B001", "2023294", 0, 2026,
-                LocalDate.now(), 3000.0, 0.0, 0.0, 0.0, Collections.emptyList()))
+                LocalDate.now(), Money.pkr(3000), Money.ZERO, Money.ZERO, Money.ZERO, Collections.emptyList()))
             .withMessageContaining("Month must be between 1 and 12");
     }
 
@@ -138,24 +139,24 @@ class BillTest {
     void constructor_withNegativeBaseAmount_shouldThrowException() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Bill("B001", "2023294", 11, 2026,
-                LocalDate.now(), -500.0, 0.0, 0.0, 0.0, Collections.emptyList()))
+                LocalDate.now(), Money.pkr(-500), Money.ZERO, Money.ZERO, Money.ZERO, Collections.emptyList()))
             .withMessageContaining("Base amount cannot be negative");
     }
 
     @Test
     @DisplayName("applyPartialPayment with zero amount should throw IllegalArgumentException")
     void applyPartialPayment_withZeroAmount_shouldThrowException() {
-        Bill bill = createSampleBill(3000.0, 0.0, 0.0, 0.0);
+        Bill bill = createSampleBill(Money.pkr(3000), Money.pkr(0), Money.pkr(0), Money.pkr(0));
 
         assertThatIllegalArgumentException()
-            .isThrownBy(() -> bill.applyPartialPayment(0.0))
+            .isThrownBy(() -> bill.applyPartialPayment(Money.pkr(0)))
             .withMessageContaining("Payment amount must be positive");
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────
 
     /** Creates a Bill with predictable test values and an empty item list */
-    private Bill createSampleBill(double base, double rebate, double fine, double discount) {
+    private Bill createSampleBill(Money base, Money rebate, Money fine, Money discount) {
         return new Bill(
             "BILL-TEST-001",           // billId
             "2023294",                 // studentId (Mahvash)

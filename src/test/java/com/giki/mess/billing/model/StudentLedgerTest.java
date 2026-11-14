@@ -1,5 +1,6 @@
 package com.giki.mess.billing.model;
 
+import com.giki.mess.common.Money;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +23,7 @@ class StudentLedgerTest {
     void newLedger_shouldStartWithZeroBalanceAndActiveStatus() {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
 
-        assertThat(ledger.getBalance()).isEqualTo(0.0);
+        assertThat(ledger.getBalance()).isEqualTo(Money.ZERO);
         assertThat(ledger.getUnbilledMealCount()).isEqualTo(0);
         assertThat(ledger.isActive()).isTrue();
         assertThat(ledger.getStatus()).isEqualTo(StudentLedger.AccountStatus.ACTIVE);
@@ -33,10 +34,10 @@ class StudentLedgerTest {
     void debitAmount_shouldIncreaseBalanceAndMealCount() {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
 
-        ledger.debitAmount(120.0); // Breakfast
-        ledger.debitAmount(150.0); // Lunch
+        ledger.debitAmount(Money.pkr(120)); // Breakfast
+        ledger.debitAmount(Money.pkr(150)); // Lunch
 
-        assertThat(ledger.getBalance()).isEqualTo(270.0);
+        assertThat(ledger.getBalance()).isEqualTo(Money.pkr(270));
         assertThat(ledger.getUnbilledMealCount()).isEqualTo(2);
     }
 
@@ -44,31 +45,31 @@ class StudentLedgerTest {
     @DisplayName("creditAmount should reduce balance and not go below zero")
     void creditAmount_shouldReduceBalanceButNeverBelowZero() {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
-        ledger.debitAmount(500.0);
+        ledger.debitAmount(Money.pkr(500));
 
         // Pay more than owed — balance should floor at 0.0, not go negative
-        ledger.creditAmount(1000.0);
+        ledger.creditAmount(Money.pkr(1000));
 
-        assertThat(ledger.getBalance()).isEqualTo(0.0);
+        assertThat(ledger.getBalance()).isEqualTo(Money.ZERO);
     }
 
     @Test
     @DisplayName("creditAmount equal to balance should clear the debt")
     void creditAmount_exactBalance_shouldClearDebt() {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
-        ledger.debitAmount(3500.0);
-        ledger.creditAmount(3500.0);
+        ledger.debitAmount(Money.pkr(3500));
+        ledger.creditAmount(Money.pkr(3500));
 
-        assertThat(ledger.getBalance()).isEqualTo(0.0);
+        assertThat(ledger.getBalance()).isEqualTo(Money.ZERO);
     }
 
     @Test
     @DisplayName("clearUnbilledMeals should reset meal count to zero")
     void clearUnbilledMeals_shouldResetMealCount() {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
-        ledger.debitAmount(120.0);
-        ledger.debitAmount(150.0);
-        ledger.debitAmount(200.0);
+        ledger.debitAmount(Money.pkr(120));
+        ledger.debitAmount(Money.pkr(150));
+        ledger.debitAmount(Money.pkr(200));
 
         assertThat(ledger.getUnbilledMealCount()).isEqualTo(3);
 
@@ -81,7 +82,7 @@ class StudentLedgerTest {
     @DisplayName("suspendIfOverdue should suspend account when balance exceeds 10000 PKR")
     void suspendIfOverdue_balanceOver10000_shouldSuspendAccount() {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
-        ledger.debitAmount(11_000.0); // Exceeds 10,000 PKR threshold
+        ledger.debitAmount(Money.pkr(11_000)); // Exceeds 10,000 PKR threshold
 
         ledger.suspendIfOverdue();
 
@@ -93,7 +94,7 @@ class StudentLedgerTest {
     @DisplayName("suspendIfOverdue should NOT suspend when balance is below threshold")
     void suspendIfOverdue_belowThreshold_shouldNotSuspend() {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
-        ledger.debitAmount(5_000.0); // Below 10,000 PKR threshold
+        ledger.debitAmount(Money.pkr(5_000)); // Below 10,000 PKR threshold
 
         ledger.suspendIfOverdue();
 
@@ -104,12 +105,12 @@ class StudentLedgerTest {
     @DisplayName("creditAmount on suspended account should reactivate it when balance hits zero")
     void creditAmount_onSuspendedAccount_shouldReactivateWhenBalanceClears() {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
-        ledger.debitAmount(11_000.0);
+        ledger.debitAmount(Money.pkr(11_000));
         ledger.suspendIfOverdue();
 
         assertThat(ledger.isActive()).isFalse(); // Confirm suspended
 
-        ledger.creditAmount(11_000.0); // Full payment
+        ledger.creditAmount(Money.pkr(11_000)); // Full payment
 
         assertThat(ledger.isActive()).isTrue(); // Should reactivate
     }
@@ -122,7 +123,7 @@ class StudentLedgerTest {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
 
         assertThatIllegalArgumentException()
-            .isThrownBy(() -> ledger.debitAmount(0.0))
+            .isThrownBy(() -> ledger.debitAmount(Money.pkr(0)))
             .withMessageContaining("Debit amount must be positive");
     }
 
@@ -132,7 +133,7 @@ class StudentLedgerTest {
         StudentLedger ledger = new StudentLedger("2023294", StudentCategory.REGULAR);
 
         assertThatIllegalArgumentException()
-            .isThrownBy(() -> ledger.creditAmount(-100.0))
+            .isThrownBy(() -> ledger.creditAmount(Money.pkr(-100)))
             .withMessageContaining("Credit amount must be positive");
     }
 
