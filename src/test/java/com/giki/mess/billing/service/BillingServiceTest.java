@@ -81,4 +81,70 @@ class BillingServiceTest {
         assertThat(bill.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
         assertThat(bill.getDueDate()).isEqualTo(LocalDate.of(2026, 12, 10));
     }
+
+    // ── Cycle 2: absence rebate ───────────────────────────────────────────────
+
+    private void absentDays(int... days) {
+        for (int d : days) {
+            attendance.absences.add(LocalDate.of(2026, 11, d));
+        }
+    }
+
+    @Test
+    @DisplayName("3 consecutive registered absence days earn 80% of the daily rate per day")
+    void absenceRebate_appliedWhenAbsenceReachesThreshold() {
+        attendance.addFullDays(1, 20);   // 20 x 400 = 8,000 PKR
+        absentDays(21, 22, 23);          // daily rate 400 -> 80% = 320 x 3 = 960
+
+        Bill bill = service.calculateMonthlyBill(STUDENT, 11, 2026, END_OF_NOV);
+
+        assertThat(bill.getRebateAmount()).isEqualTo(Money.pkr(960));
+        assertThat(bill.getNetPayable()).isEqualTo(Money.pkr(8_000 - 960));
+    }
+
+    @Test
+    @DisplayName("only 2 consecutive absence days earn no rebate (below threshold)")
+    void absenceRebate_notAppliedBelowThreshold() {
+        attendance.addFullDays(1, 20);
+        absentDays(21, 22);
+
+        Bill bill = service.calculateMonthlyBill(STUDENT, 11, 2026, END_OF_NOV);
+
+        assertThat(bill.getRebateAmount()).isEqualTo(Money.ZERO);
+    }
+
+    @Test
+    @DisplayName("separate short absences are not added together")
+    void absenceRebate_separateRunsAreNotCombined() {
+        attendance.addFullDays(1, 20);
+        absentDays(5, 6, 10, 11); // two runs of 2, none qualifies
+
+        Bill bill = service.calculateMonthlyBill(STUDENT, 11, 2026, END_OF_NOV);
+
+        assertThat(bill.getRebateAmount()).isEqualTo(Money.ZERO);
+    }
+
+    @Test
+    @DisplayName("rebate is capped at 20 days")
+    void absenceRebate_cappedAtTwentyDays() {
+        attendance.addFullDays(1, 5);
+        for (int d = 6; d <= 30; d++) {
+            absentDays(d); // 25 consecutive absent days
+        }
+
+        Bill bill = service.calculateMonthlyBill(STUDENT, 11, 2026, END_OF_NOV);
+
+        assertThat(bill.getRebateAmount()).isEqualTo(Money.pkr(320).times(20));
+    }
+
+    @Test
+    @DisplayName("net payable never goes negative when rebate exceeds base")
+    void netPayable_neverNegative() {
+        attendance.addFullDays(1, 1);        // base 400 PKR
+        absentDays(10, 11, 12, 13, 14);      // rebate 1,600 PKR
+
+        Bill bill = service.calculateMonthlyBill(STUDENT, 11, 2026, END_OF_NOV);
+
+        assertThat(bill.getNetPayable()).isEqualTo(Money.ZERO);
+    }
 }
