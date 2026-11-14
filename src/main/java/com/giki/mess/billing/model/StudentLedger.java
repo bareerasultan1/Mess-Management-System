@@ -178,26 +178,58 @@ public class StudentLedger {
 
     public String getStudentId()       { return studentId;        }
     public StudentCategory getCategory() { return category;       }
-    public Money getBalance()          { return balance;          }
-    public int getUnbilledMealCount()  { return unbilledMealCount;}
-    public AccountStatus getStatus()   { return status;           }
+    // Reads take the same lock as writes so a reader always sees the latest committed value
+    // (Java gives no visibility guarantee for a plain field read without synchronization).
 
-    /** Consistent copy of balance, meal count and status (skeleton: added test-first). */
+    public Money getBalance() {
+        balanceLock.lock();
+        try {
+            return balance;
+        } finally {
+            balanceLock.unlock();
+        }
+    }
+
+    public int getUnbilledMealCount() {
+        balanceLock.lock();
+        try {
+            return unbilledMealCount;
+        } finally {
+            balanceLock.unlock();
+        }
+    }
+
+    public AccountStatus getStatus() {
+        balanceLock.lock();
+        try {
+            return status;
+        } finally {
+            balanceLock.unlock();
+        }
+    }
+
+    /** Consistent copy of balance, meal count and status taken in one locked step. */
     public LedgerSnapshot snapshot() {
-        return null;
+        balanceLock.lock();
+        try {
+            return new LedgerSnapshot(balance, unbilledMealCount, status);
+        } finally {
+            balanceLock.unlock();
+        }
     }
 
     /**
      * Convenience check used by the attendance module to gate-keep mess access.
      */
     public boolean isActive() {
-        return status == AccountStatus.ACTIVE;
+        return getStatus() == AccountStatus.ACTIVE;
     }
 
     @Override
     public String toString() {
+        LedgerSnapshot s = snapshot();
         return String.format(
             "StudentLedger{student='%s', category=%s, balance=%s, unbilledMeals=%d, status=%s}",
-            studentId, category, balance, unbilledMealCount, status);
+            studentId, category, s.balance(), s.unbilledMealCount(), s.status());
     }
 }
