@@ -2,6 +2,7 @@ package com.giki.mess.billing.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.giki.mess.billing.config.TariffConfiguration;
 import com.giki.mess.billing.model.Bill;
 import com.giki.mess.billing.model.MealType;
 import com.giki.mess.billing.model.PaymentStatus;
@@ -64,7 +65,7 @@ class BillingServiceTest {
         bills = new InMemoryBillRepository();
         attendance = new FakeAttendance();
         ledgers.save(new StudentLedger(STUDENT, StudentCategory.REGULAR));
-        service = new BillingServiceImpl(ledgers, bills, attendance);
+        service = new BillingServiceImpl(ledgers, bills, attendance, TariffConfiguration.defaults());
     }
 
     @Test

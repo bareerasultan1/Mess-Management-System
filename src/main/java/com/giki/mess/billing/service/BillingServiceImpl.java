@@ -1,9 +1,9 @@
 package com.giki.mess.billing.service;
 
+import com.giki.mess.billing.config.TariffConfiguration;
 import com.giki.mess.billing.exception.LedgerNotFoundException;
 import com.giki.mess.billing.model.Bill;
 import com.giki.mess.billing.model.BillItem;
-import com.giki.mess.billing.model.MealType;
 import com.giki.mess.billing.model.StudentLedger;
 import com.giki.mess.common.Money;
 import com.giki.mess.repository.IBillRepository;
@@ -17,9 +17,11 @@ public class BillingServiceImpl implements BillingService {
     private final ILedgerRepository ledgers;
     private final IBillRepository bills;
     private final AttendanceDataSource attendance;
+    private final TariffConfiguration tariff;
 
     public BillingServiceImpl(ILedgerRepository ledgers, IBillRepository bills,
-                              AttendanceDataSource attendance) {
+                              AttendanceDataSource attendance, TariffConfiguration tariff) {
+        this.tariff = tariff;
         this.ledgers = ledgers;
         this.bills = bills;
         this.attendance = attendance;
@@ -40,22 +42,15 @@ public class BillingServiceImpl implements BillingService {
         List<BillItem> items = new ArrayList<>();
         Money base = Money.ZERO;
         for (MealRecord meal : attendance.mealsFor(studentId, month, year)) {
-            Money rate = rateFor(meal.mealType());
+            Money rate = tariff.rateFor(meal.mealType());
             items.add(new BillItem(meal.eventId(), billId, studentId,
                 meal.scanTime(), meal.mealType(), rate));
             base = base.plus(rate);
         }
 
-        LocalDate dueDate = LocalDate.of(year, month, 1).plusMonths(1).withDayOfMonth(10);
+        LocalDate dueDate = LocalDate.of(year, month, 1).plusMonths(1).withDayOfMonth(tariff.dueDayOfNextMonth());
         Bill bill = new Bill(billId, studentId, month, year, dueDate,
             base, Money.ZERO, Money.ZERO, Money.ZERO, items);
         return bills.save(bill);
-    }
-
-    private Money rateFor(MealType type) {
-        return switch (type) {
-            case BREAKFAST -> Money.pkr(100);
-            case LUNCH, DINNER -> Money.pkr(150);
-        };
     }
 }
