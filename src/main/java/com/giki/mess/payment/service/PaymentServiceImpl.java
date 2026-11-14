@@ -12,6 +12,7 @@ import com.giki.mess.payment.exception.InvalidCallbackException;
 import com.giki.mess.payment.exception.PaymentException;
 import com.giki.mess.payment.factory.PaymentProcessorFactory;
 import com.giki.mess.payment.gateway.IPaymentProcessor;
+import com.giki.mess.payment.idempotency.IdempotencyManager;
 import com.giki.mess.payment.model.CallbackStatus;
 import com.giki.mess.payment.model.PaymentCallback;
 import com.giki.mess.payment.model.PaymentChannel;
@@ -43,12 +44,21 @@ public class PaymentServiceImpl implements PaymentService {
     private final IBillRepository bills;
     private final ILedgerRepository ledgers;
 
+    private final IdempotencyManager idempotency;
+
     public PaymentServiceImpl(PaymentProcessorFactory factory, IPaymentRepository payments,
                               IBillRepository bills, ILedgerRepository ledgers) {
+        this(factory, payments, bills, ledgers, new IdempotencyManager());
+    }
+
+    public PaymentServiceImpl(PaymentProcessorFactory factory, IPaymentRepository payments,
+                              IBillRepository bills, ILedgerRepository ledgers,
+                              IdempotencyManager idempotency) {
         this.factory = factory;
         this.payments = payments;
         this.bills = bills;
         this.ledgers = ledgers;
+        this.idempotency = idempotency;
     }
 
     @Override
