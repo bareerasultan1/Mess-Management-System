@@ -13,6 +13,7 @@ import com.giki.mess.payment.exception.PaymentException;
 import com.giki.mess.payment.factory.PaymentProcessorFactory;
 import com.giki.mess.payment.gateway.IPaymentProcessor;
 import com.giki.mess.payment.idempotency.IdempotencyManager;
+import com.giki.mess.payment.idempotency.TransactionRecord;
 import com.giki.mess.payment.model.CallbackStatus;
 import com.giki.mess.payment.model.PaymentCallback;
 import com.giki.mess.payment.model.PaymentChannel;
@@ -25,6 +26,7 @@ import com.giki.mess.repository.ILedgerRepository;
 import com.giki.mess.repository.IPaymentRepository;
 import com.giki.mess.util.LogRedactor;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,8 +121,16 @@ public class PaymentServiceImpl implements PaymentService {
             throw new InvalidCallbackException("Callback does not match the original payment request");
         }
         factory.getProcessor(tx.getChannel()).reconcile(callback); // signature + freshness
-        if (tx.getStatus() != TransactionStatus.INITIATED) {
+
+        // Atomic gate: of all concurrent copies of this callback exactly one gets past here.
+        TransactionRecord claim = new TransactionRecord(tx.getTransactionId(), Instant.now());
+        if (!idempotency.tryAcquire(tx.getIdempotencyKey(), claim)) {
             LOG.info("Duplicate callback ignored: tx={}", tx.getTransactionId());
+            throw new DuplicateTransactionException(tx.getIdempotencyKey());
+        }
+        // Second guard for after a restart, when the in-memory gate is empty.
+        if (tx.getStatus() != TransactionStatus.INITIATED) {
+            LOG.info("Already-settled transaction ignored: tx={}", tx.getTransactionId());
             throw new DuplicateTransactionException(tx.getIdempotencyKey());
         }
 
@@ -131,10 +141,18 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // Look everything up first so a missing record cannot leave a half-settled payment.
-        Bill bill = bills.findById(tx.getBillId())
-            .orElseThrow(() -> new BillNotFoundException(tx.getBillId()));
-        StudentLedger ledger = ledgers.findByStudentId(tx.getStudentId())
-            .orElseThrow(() -> new LedgerNotFoundException(tx.getStudentId()));
+        // If a lookup fails nothing has changed yet, so the key is given back for a retry.
+        Bill bill;
+        StudentLedger ledger;
+        try {
+            bill = bills.findById(tx.getBillId())
+                .orElseThrow(() -> new BillNotFoundException(tx.getBillId()));
+            ledger = ledgers.findByStudentId(tx.getStudentId())
+                .orElseThrow(() -> new LedgerNotFoundException(tx.getStudentId()));
+        } catch (RuntimeException e) {
+            idempotency.release(tx.getIdempotencyKey(), claim);
+            throw e;
+        }
 
         tx.markSuccess();
         ledger.creditAmount(tx.getAmount());
