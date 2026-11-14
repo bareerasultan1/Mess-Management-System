@@ -31,6 +31,10 @@ public class BillingServiceImpl implements BillingService {
     private final AttendanceDataSource attendance;
     private final TariffConfiguration tariff;
     private final Map<StudentCategory, BillingCalculationStrategy> strategies;
+    private static final org.slf4j.Logger LOG =
+        org.slf4j.LoggerFactory.getLogger(BillingServiceImpl.class);
+    /** Scan events already billed (thread-safe set; the SQLite layer adds a UNIQUE constraint). */
+    private final Set<String> recordedScanEvents = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     public BillingServiceImpl(ILedgerRepository ledgers, IBillRepository bills,
                               AttendanceDataSource attendance, TariffConfiguration tariff,
@@ -105,7 +109,30 @@ public class BillingServiceImpl implements BillingService {
     @Override
     public void recordMealSwipe(String studentId, MealType mealType,
                                 java.time.LocalDateTime scanTime, String eventId) {
-        throw new UnsupportedOperationException("not implemented yet (TDD RED)");
+        if (studentId == null || studentId.isBlank() || eventId == null || eventId.isBlank()) {
+            throw new IllegalArgumentException("studentId and eventId cannot be null or blank");
+        }
+        if (mealType == null || scanTime == null) {
+            throw new IllegalArgumentException("mealType and scanTime cannot be null");
+        }
+        // Atomic replay guard: add() returns false if another thread already recorded this scan.
+        if (!recordedScanEvents.add(eventId)) {
+            LOG.info("Replayed scan event ignored: event={}", eventId);
+            return;
+        }
+        try {
+            StudentLedger ledger = ledgers.findByStudentId(studentId)
+                .orElseThrow(() -> new LedgerNotFoundException(studentId));
+            BillingCalculationStrategy strategy = strategies.get(ledger.getCategory());
+            if (strategy == null) {
+                throw new InvalidTariffException("No tariff strategy for category " + ledger.getCategory());
+            }
+            ledger.debitAmount(strategy.rateFor(mealType));
+            ledgers.save(ledger);
+        } catch (RuntimeException e) {
+            recordedScanEvents.remove(eventId);   // nothing was billed, so allow a retry
+            throw e;
+        }
     }
 
     @Override

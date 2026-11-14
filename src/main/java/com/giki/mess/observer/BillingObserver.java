@@ -12,11 +12,15 @@ public class BillingObserver implements AttendanceObserver {
     private final BillingService billingService;
 
     public BillingObserver(BillingService billingService) {
+        if (billingService == null) {
+            throw new IllegalArgumentException("billingService cannot be null");
+        }
         this.billingService = billingService;
     }
 
     @Override
     public void onAttendanceRecorded(ScanEvent event) {
-        // skeleton: behaviour is added test-first
+        billingService.recordMealSwipe(event.studentId(), event.mealType(),
+            event.timestamp(), event.eventId());
     }
 }
