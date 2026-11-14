@@ -17,10 +17,11 @@ public final class TariffConfiguration {
     private final int rebatePercent;
     private final int maxRebateDays;
     private final int lateFinePercent;
+    private final Money administrativeCharge;
 
     public TariffConfiguration(Map<MealType, Money> mealRates, int dueDayOfNextMonth,
                                int absenceThresholdDays, int rebatePercent, int maxRebateDays,
-                               int lateFinePercent) {
+                               int lateFinePercent, Money administrativeCharge) {
         if (mealRates == null || mealRates.size() != MealType.values().length) {
             throw new com.giki.mess.billing.exception.InvalidTariffException(
                 "A rate is required for every meal type");
@@ -44,6 +45,11 @@ public final class TariffConfiguration {
             throw new com.giki.mess.billing.exception.InvalidTariffException(
                 "Late fine percent must be 0-100, got: " + lateFinePercent);
         }
+        if (administrativeCharge == null || !administrativeCharge.isPositive()) {
+            throw new com.giki.mess.billing.exception.InvalidTariffException(
+                "Administrative charge must be positive");
+        }
+        this.administrativeCharge = administrativeCharge;
         this.lateFinePercent = lateFinePercent;
         this.absenceThresholdDays = absenceThresholdDays;
         this.rebatePercent = rebatePercent;
@@ -58,7 +64,7 @@ public final class TariffConfiguration {
         rates.put(MealType.BREAKFAST, Money.pkr(100));
         rates.put(MealType.LUNCH, Money.pkr(150));
         rates.put(MealType.DINNER, Money.pkr(150));
-        return new TariffConfiguration(rates, 10, 3, 80, 20, 5);
+        return new TariffConfiguration(rates, 10, 3, 80, 20, 5, Money.pkr(100));
     }
 
     public Money rateFor(MealType type) {
@@ -83,6 +89,11 @@ public final class TariffConfiguration {
     /** Penalty (percent of the amount due) when a bill is unpaid after its due date (default 5). */
     public int lateFinePercent() {
         return lateFinePercent;
+    }
+
+    /** Minimum bill for a month in which the student ate no meals (default 100 PKR). */
+    public Money administrativeCharge() {
+        return administrativeCharge;
     }
 
     public int dueDayOfNextMonth() {

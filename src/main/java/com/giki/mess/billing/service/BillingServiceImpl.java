@@ -1,6 +1,7 @@
 package com.giki.mess.billing.service;
 
 import com.giki.mess.billing.config.TariffConfiguration;
+import com.giki.mess.billing.exception.BillNotFoundException;
 import com.giki.mess.billing.exception.InvalidTariffException;
 import com.giki.mess.billing.exception.LedgerNotFoundException;
 import com.giki.mess.billing.model.Bill;
@@ -14,6 +15,8 @@ import com.giki.mess.repository.IBillRepository;
 import com.giki.mess.repository.ILedgerRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,6 +66,10 @@ public class BillingServiceImpl implements BillingService {
             base = base.plus(rate);
         }
 
+        if (items.isEmpty()) {
+            base = tariff.administrativeCharge();   // minimal charge when no meals were eaten
+        }
+
         Money rebate = calculateRebate(
             attendance.registeredAbsences(studentId, month, year), month, year, strategy);
         Money mealCostAfterRebate = base.minus(rebate).floorAtZero();
@@ -82,7 +89,19 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     public ItemizedInvoice generateItemizedInvoice(String billId) {
-        throw new UnsupportedOperationException("not implemented yet (TDD RED)");
+        Bill bill = bills.findById(billId).orElseThrow(() -> new BillNotFoundException(billId));
+        Map<MealType, Integer> counts = new EnumMap<>(MealType.class);
+        for (MealType type : MealType.values()) {
+            counts.put(type, 0);
+        }
+        Set<LocalDate> days = new HashSet<>();
+        for (BillItem item : bill.getItems()) {
+            counts.merge(item.getMealType(), 1, Integer::sum);
+            days.add(item.getScanTime().toLocalDate());
+        }
+        return new ItemizedInvoice(bill.getBillId(), bill.getStudentId(), bill.getMonth(),
+            bill.getYear(), days.size(), counts, bill.getBaseAmount(), bill.getRebateAmount(),
+            bill.getDiscountAmount(), bill.getFineAmount(), bill.getNetPayable(), bill.getItems());
     }
 
     /**
