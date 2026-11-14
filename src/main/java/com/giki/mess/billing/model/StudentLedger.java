@@ -182,6 +182,11 @@ public class StudentLedger {
     public int getUnbilledMealCount()  { return unbilledMealCount;}
     public AccountStatus getStatus()   { return status;           }
 
+    /** Consistent copy of balance, meal count and status (skeleton: added test-first). */
+    public LedgerSnapshot snapshot() {
+        return null;
+    }
+
     /**
      * Convenience check used by the attendance module to gate-keep mess access.
      */
