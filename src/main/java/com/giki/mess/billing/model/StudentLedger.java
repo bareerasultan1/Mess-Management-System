@@ -145,6 +145,10 @@ public class StudentLedger {
         }
     }
 
+    /** Skeleton: signed bill adjustment (rebate, discount, fine); behaviour added test-first. */
+    public void adjustBalance(Money delta) {
+    }
+
     /**
      * Resets the unbilled meal count after a monthly bill has been generated.
      * Called by BillingService after successfully creating a Bill object.
