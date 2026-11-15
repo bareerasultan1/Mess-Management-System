@@ -60,6 +60,13 @@ public class PaymentTransaction {
      */
     public PaymentTransaction(String transactionId, String studentId, String billId,
                               Money amount, PaymentChannel channel, String idempotencyKey) {
+        this(transactionId, studentId, billId, amount, channel, idempotencyKey,
+            LocalDateTime.now(), TransactionStatus.INITIATED);
+    }
+
+    private PaymentTransaction(String transactionId, String studentId, String billId,
+                               Money amount, PaymentChannel channel, String idempotencyKey,
+                               LocalDateTime createdAt, TransactionStatus status) {
         // Defensive validation
         if (transactionId == null || transactionId.isBlank()) {
             throw new IllegalArgumentException("transactionId cannot be null or blank");
@@ -91,8 +98,20 @@ public class PaymentTransaction {
         this.amount          = amount;
         this.channel         = channel;
         this.idempotencyKey  = idempotencyKey;
-        this.createdAt       = LocalDateTime.now();
-        this.status          = TransactionStatus.INITIATED; // Always starts INITIATED
+        if (createdAt == null || status == null) {
+            throw new IllegalArgumentException("createdAt and status cannot be null");
+        }
+        this.createdAt       = createdAt;
+        this.status          = status;
+    }
+
+    /** Rebuilds a stored transaction (used by the database layer only). */
+    public static PaymentTransaction restore(String transactionId, String studentId, String billId,
+                                             Money amount, PaymentChannel channel,
+                                             String idempotencyKey, LocalDateTime createdAt,
+                                             TransactionStatus status) {
+        return new PaymentTransaction(transactionId, studentId, billId, amount, channel,
+            idempotencyKey, createdAt, status);
     }
 
     // ── Controlled status transitions ─────────────────────────────────────────

@@ -94,6 +94,19 @@ public class StudentLedger {
         this.status          = AccountStatus.ACTIVE;
     }
 
+    /** Rebuilds a stored ledger with its saved state (database layer only). */
+    public static StudentLedger restore(String studentId, StudentCategory category, Money balance,
+                                        int unbilledMealCount, AccountStatus status) {
+        if (balance == null || balance.isNegative() || unbilledMealCount < 0 || status == null) {
+            throw new IllegalArgumentException("Invalid stored ledger state for " + studentId);
+        }
+        StudentLedger ledger = new StudentLedger(studentId, category);
+        ledger.balance = balance;
+        ledger.unbilledMealCount = unbilledMealCount;
+        ledger.status = status;
+        return ledger;
+    }
+
     // ── Thread-safe balance operations ───────────────────────────────────────
 
     /**

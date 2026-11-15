@@ -108,6 +108,21 @@ public class Bill {
         this.paymentStatus  = PaymentStatus.UNPAID;
     }
 
+    /** Rebuilds a stored bill with its saved balance and status (database layer only). */
+    public static Bill restore(String billId, String studentId, int month, int year,
+                               LocalDate dueDate, Money baseAmount, Money rebateAmount,
+                               Money fineAmount, Money discountAmount, Money netPayable,
+                               PaymentStatus paymentStatus, List<BillItem> items) {
+        Bill bill = new Bill(billId, studentId, month, year, dueDate, baseAmount, rebateAmount,
+            fineAmount, discountAmount, items);
+        if (netPayable == null || netPayable.isNegative() || paymentStatus == null) {
+            throw new IllegalArgumentException("netPayable and paymentStatus are required");
+        }
+        bill.netPayable = netPayable;
+        bill.paymentStatus = paymentStatus;
+        return bill;
+    }
+
     // ── Controlled state transitions ─────────────────────────────────────────
 
     /**
