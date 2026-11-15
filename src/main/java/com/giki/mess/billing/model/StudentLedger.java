@@ -145,8 +145,27 @@ public class StudentLedger {
         }
     }
 
-    /** Skeleton: signed bill adjustment (rebate, discount, fine); behaviour added test-first. */
+    /**
+     * Applies a signed bill adjustment: positive for a fine or fee (student owes more),
+     * negative for a rebate or discount (student owes less, never below zero).
+     * Unlike debitAmount this does not count as an extra meal.
+     */
     public void adjustBalance(Money delta) {
+        if (delta == null) {
+            throw new IllegalArgumentException("Adjustment cannot be null for student " + studentId);
+        }
+        if (delta.isZero()) {
+            return;
+        }
+        balanceLock.lock();
+        try {
+            this.balance = this.balance.plus(delta).floorAtZero();
+            if (this.balance.isZero() && this.status == AccountStatus.SUSPENDED) {
+                this.status = AccountStatus.ACTIVE;
+            }
+        } finally {
+            balanceLock.unlock();
+        }
     }
 
     /**

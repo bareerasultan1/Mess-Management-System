@@ -103,7 +103,22 @@ public class BillingServiceImpl implements BillingService {
 
         Bill bill = new Bill(billId, studentId, month, year, dueDate,
             base, rebate, fine, discount, items);
+
+        // Bring the ledger in line with the bill. Only the CHANGE since the previous version of
+        // this bill is applied, so recalculating never counts a rebate or fine twice.
+        Money previousAdjustment = existing.map(BillingServiceImpl::adjustmentOf).orElse(Money.ZERO);
+        ledger.adjustBalance(adjustmentOf(bill).minus(previousAdjustment));
+        ledgers.save(ledger);
         return bills.save(bill);
+    }
+
+    /** What the bill adds to (or removes from) the per-meal debits already on the ledger. */
+    private static Money adjustmentOf(Bill bill) {
+        Money scanned = Money.ZERO;
+        for (BillItem item : bill.getItems()) {
+            scanned = scanned.plus(item.getRateApplied());
+        }
+        return bill.getNetPayable().minus(scanned);
     }
 
     @Override
