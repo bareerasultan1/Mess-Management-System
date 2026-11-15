@@ -1,0 +1,31 @@
+name: CI
+
+# Builds the project and runs the whole automated test suite on every push and pull request.
+# `mvn verify` also enforces the JaCoCo coverage gate (line coverage must stay >= 60%).
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 22
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '22'
+          cache: maven
+
+      - name: Build, test and check coverage
+        run: mvn -B verify
+
+      - name: Keep the coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
