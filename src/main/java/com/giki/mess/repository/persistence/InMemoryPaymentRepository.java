@@ -14,7 +14,14 @@ public class InMemoryPaymentRepository implements IPaymentRepository {
     private final ConcurrentMap<String, PaymentTransaction> store = new ConcurrentHashMap<>();
 
     @Override
-    public PaymentTransaction save(PaymentTransaction transaction) {
+    public synchronized PaymentTransaction save(PaymentTransaction transaction) {
+        boolean keyUsedByOther = store.values().stream().anyMatch(
+            t -> t.getIdempotencyKey().equals(transaction.getIdempotencyKey())
+                && !t.getTransactionId().equals(transaction.getTransactionId()));
+        if (keyUsedByOther) {   // same rule as the UNIQUE column in the SQLite schema
+            throw new com.giki.mess.payment.exception.DuplicateTransactionException(
+                transaction.getIdempotencyKey());
+        }
         store.put(transaction.getTransactionId(), transaction);
         return transaction;
     }
