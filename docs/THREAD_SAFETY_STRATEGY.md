@@ -53,13 +53,21 @@ locked forever.
 5. credit the ledger, apply the payment to the bill, mark the transaction RECONCILED.
 
 A second guard (`status != INITIATED`) protects after a restart when the in-memory gate is empty.
-The SQLite layer will add a `UNIQUE` constraint on `idempotency_key` as the durable guard.
+The SQLite layer adds a `UNIQUE` constraint on `idempotency_key` as the durable guard (see `PERSISTENCE_AND_BOUNDARIES.md`).
 
 ## 5. Asynchronous scan handling (Observer pattern)
 
 `AttendanceSubject.publish()` runs each observer on a worker thread and returns immediately. A
 slow or failing billing database therefore cannot freeze the mess-gate turnstile. An exception in
 one observer is logged and contained; other observers still run.
+
+## 5b. SQLite and the identity map
+
+With a database, two threads could each load their own copy of a student's ledger and each save a
+different balance (lost update). The SQLite repositories therefore return ONE object per id inside
+the process (identity map), so every thread shares the same `ReentrantLock`, and `save()` takes its
+snapshot inside a per-id lock so writes reach the file in order. Test
+`concurrentSaves_noLostUpdateInDatabase` (20 threads) proves the exact total is on disk.
 
 ## 6. Evidence (tests)
 
@@ -77,10 +85,10 @@ without a failure.
 
 ## 7. Known limits
 
-- `IdempotencyManager` and the replayed-scan set are in memory. After a restart only the
-  transaction status check and (later) the database `UNIQUE` constraints protect against replays.
-- The ledger credit and the bill update are each atomic but not one single transaction. The SQLite
-  layer will wrap them in one database transaction.
+- `IdempotencyManager` and the replayed-scan set are in memory. After a restart the transaction
+  status check and the database `UNIQUE(idempotency_key)` constraint protect payments (proved by the
+  end-to-end restart test). Replayed *scan events* are not yet protected by a database constraint.
+- The ledger credit and the bill update are each atomic but not one single database transaction.
 - `StudentLedger.creditAmount` floors the balance at zero, so the "balance = start + debits -
   credits" invariant holds only while credits do not exceed what is owed (the stress tests start
   from a large balance for that reason).
