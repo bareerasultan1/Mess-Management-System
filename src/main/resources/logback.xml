@@ -32,6 +32,12 @@
         <appender-ref ref="BILLING_AUDIT" />
     </logger>
 
+    <!-- Audit trail of every boundary operation (student ids are masked before logging) -->
+    <logger name="com.giki.mess.audit" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="BILLING_AUDIT" />
+    </logger>
+
     <!-- Payment-specific logger: also DEBUG + audit file -->
     <logger name="com.giki.mess.payment" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE" />

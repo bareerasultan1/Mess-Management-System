@@ -62,6 +62,7 @@ class BillingPaymentApiTest {
     @BeforeEach
     void setUp() {
         ledger = new StudentLedger(STUDENT, StudentCategory.REGULAR);
+        ledger.debitAmount(Money.pkr(1_500));   // the observer already debited the 10 scanned lunches
         ledgers.save(ledger);
         TariffConfiguration tariff = TariffConfiguration.defaults();
         AttendanceDataSource attendance = new AttendanceDataSource() {
