@@ -1,6 +1,5 @@
 package com.giki.mess.campus.alerts;
 
-import java.util.concurrent.*;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.*;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -13,8 +12,7 @@ import com.giki.mess.campus.feedback.Feedback;
 @ConditionalOnProperty(name="mess.scheduling",havingValue="true",matchIfMissing=true)
 public class Workers {
     private static final Logger LOG = LoggerFactory.getLogger(Workers.class);
-    private final ThreadPoolExecutor pool = new ThreadPoolExecutor(2,2,0,TimeUnit.SECONDS,
-        new SynchronousQueue<>(), Thread.ofPlatform().name("campus-delivery-",0).factory(), new ThreadPoolExecutor.AbortPolicy());
+    private final DeliveryPool pool = new DeliveryPool();
     private final Delivery delivery;
     private final Feedback feedback;
     private final BillReminders bills;
@@ -23,8 +21,7 @@ public class Workers {
     @Scheduled(fixedDelay=250)
     public void poll() {
         for (int i=0; i<2; i++) {
-            try { pool.execute(this::drain); }
-            catch (RejectedExecutionException busy) { return; } // Rows stay ready for the next poll.
+            if (!pool.offer(this::drain)) return;
         }
     }
     private void drain() {
@@ -35,5 +32,5 @@ public class Workers {
     public void escalate() { feedback.escalate(); }
     @Scheduled(fixedDelay=1000)
     public void reminders() { bills.tick(); }
-    @PreDestroy public void close() { pool.shutdown(); }
+    @PreDestroy public void close() { pool.close(); }
 }
