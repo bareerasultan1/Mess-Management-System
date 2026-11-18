@@ -1,0 +1,10 @@
+java version "21.0.6" 2025-01-21 LTS
+Java(TM) SE Runtime Environment (build 21.0.6+8-LTS-188)
+Java HotSpot(TM) 64-Bit Server VM (build 21.0.6+8-LTS-188, mixed mode, sharing)
+PASS 30 domain and translation contract checks
+PASS two distinct background workers; third offer deferred; no caller-thread delivery; shutdown drained
+PASS javac --release 21 -Xlint:all -Werror (contract, domain and DeliveryPool; no compiler warnings)
+PASS javac syntax parse on 30 Java sources (dependency type checks excluded)
+PASS node --check app.js
+Directory target/domain-check:
+PASS jdeprscan on offline classes

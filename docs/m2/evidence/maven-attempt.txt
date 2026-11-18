@@ -1,0 +1,5 @@
+Invoke-WebRequest: D:\Downloads\SCaDSQAProject\Mess-Management-System\scripts\demo.ps1:39
+Line |
+  39 |              Invoke-WebRequest $uri -OutFile $zip -TimeoutSec 60
+     |              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | No such host is known.

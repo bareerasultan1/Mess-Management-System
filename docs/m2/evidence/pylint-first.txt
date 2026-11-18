@@ -1,0 +1,7 @@
+************* Module postgres-check
+scripts\postgres-check.py:46:11: W1510: 'subprocess.run' used without explicitly defining the value for 'check'. (subprocess-run-check)
+scripts\postgres-check.py:100:69: W1309: Using an f-string that does not have any interpolated variables (f-string-without-interpolation)
+************* Module http-check
+scripts\http-check.py:71:4: W0621: Redefining name 'times' from outer scope (line 84) (redefined-outer-name)
+scripts\http-check.py:71:14: W0621: Redefining name 'errors' from outer scope (line 85) (redefined-outer-name)
+scripts\http-check.py:76:15: W0718: Catching too general exception Exception (broad-exception-caught)

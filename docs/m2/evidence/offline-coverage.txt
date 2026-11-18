@@ -1,0 +1,25 @@
+PASS 30 domain and translation contract checks
+PASS two distinct background workers; third offer deferred; no caller-thread delivery; shutdown drained
+---- IntelliJ IDEA coverage runner ---- 
+tracing ...
+include patterns:
+com.giki.mess.campus.domain.*
+com.giki.mess.campus.contract.*
+com.giki.mess.campus.alerts.DeliveryPool
+exclude patterns:
+PASS 30 domain and translation contract checks
+Class transformation time: 0.054610708s for 286 classes or 1.9094653146853148E-4s per class
+---- IntelliJ IDEA coverage runner ---- 
+tracing ...
+include patterns:
+com.giki.mess.campus.domain.*
+com.giki.mess.campus.contract.*
+com.giki.mess.campus.alerts.DeliveryPool
+exclude patterns:
+PASS two distinct background workers; third offer deferred; no caller-thread delivery; shutdown drained
+Class transformation time: 0.011307207s for 74 classes or 1.5280009459459458E-4s per class
+AlertEvent.java 10/11 instrumented lines
+BillingAdapter.java 3/4 instrumented lines
+DeliveryPool.java 8/8 instrumented lines
+Rules.java 19/20 instrumented lines
+Offline subset 40/43 (93.0%)

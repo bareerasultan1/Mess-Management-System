@@ -1,0 +1,4 @@
+PASS staff UI fixture at 390px; no page errors
+PASS student UI fixture at 390px; no page errors
+PASS admin UI fixture at 390px; no page errors
+PASS public UI fixture at 390px; no page errors

@@ -1,5 +1,6 @@
 PASS draft hidden; menu and event rolled back together; publication committed
 PASS recovered committed event in a fresh backend; replay: one inbox row per student
 PASS stale update, rating 0/1/5/6, threshold before/at, repeat escalation, resolution and exclusions
-MEASURE ops=2000 db_ops_per_s=33047.5 p95_ms=0.012 errors=0 END
-Workload: 1 backend, 2 seeded inbox rows, 2,000 indexed hot reads in one PL/pgSQL loop; SQL-only timings.
+PASS forced recipient FK failure, rolled-back delivery, delayed retry, successful durable recovery
+MEASURE ops=2000 db_ops_per_s=22477.7 p95_ms=0.021 errors=0 END
+Workload: 1 backend, 3 inbox rows (1 for measured student), 2,000 indexed hot reads in one PL/pgSQL loop; SQL-only timings.
