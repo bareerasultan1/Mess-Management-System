@@ -4,13 +4,10 @@ Use --standalone-data only with a stopped, disposable PostgreSQL cluster.
 No production schema is truncated. Two backend sessions also exercise restart recovery.
 """
 import argparse
-import math
-import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
-import time
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +25,7 @@ projection = "select status, escalated is not null as escalated,created,resolved
 
 def literal(v):
     if v is None: return "NULL"
+    if isinstance(v, bool): return "true" if v else "false"
     if isinstance(v, int): return str(v)
     return "'" + v.replace("'", "''") + "'"
 
@@ -77,7 +75,7 @@ try:
              f"update campus_event set state='DONE' where id='{event}'","commit",insert_event(event),
              sql("deliver_page","",event,now),
              expect("(select count(*)=2 from campus_inbox) and (select count(*)=1 from campus_inbox where recipient='student')","dedup"),
-             sql("edit_menu","Stale edit",0,menu,0).replace("special=0","special=false"),
+             sql("edit_menu","Stale edit",False,menu,0),
              expect("(select dishes='Daal' and version=1 from campus_menu)","stale edit"),
              sql("rate_meal",str(uuid.uuid4()),1,menu),sql("rate_meal",str(uuid.uuid4()),5,menu)]
     for value in [0,6]:

@@ -1,0 +1,2 @@
+PASS 30 domain and translation contract checks
+PASS two distinct background workers; third offer deferred; no caller-thread delivery; shutdown drained

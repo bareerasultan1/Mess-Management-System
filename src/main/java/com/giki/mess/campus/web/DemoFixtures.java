@@ -33,6 +33,11 @@ class DemoFixtures {
         }
         return Map.of("event",id);
     }
+    record DeliveryState(String state,int attempts) {}
+    @GetMapping("/{id}") DeliveryState state(@PathVariable UUID id) {
+        return db.sql("select state,attempts from campus_event where id=?").param(id).query(DeliveryState.class)
+            .optional().orElseThrow(NoSuchElementException::new);
+    }
     @PostMapping("/{id}/replay") void replay(@PathVariable UUID id) {
         int n=db.sql("update campus_event set state='READY',cursor_id=null,attempts=0,available=? where id=? and state='DONE'")
             .params(java.sql.Timestamp.from(clock.instant()),id).update();

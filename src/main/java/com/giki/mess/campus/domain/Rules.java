@@ -9,7 +9,7 @@ import com.giki.mess.campus.contract.AlertEvent.Kind;
 public final class Rules {
     private Rules() {}
     public static String text(String raw, int max) {
-        if (raw == null || raw.isBlank() || raw.strip().length() > max)
+        if (raw == null || raw.isBlank() || raw.indexOf('\0') >= 0 || raw.strip().length() > max)
             throw new IllegalArgumentException("Enter 1 to " + max + " characters.");
         return raw.strip();
     }
