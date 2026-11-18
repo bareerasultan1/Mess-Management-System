@@ -18,7 +18,7 @@ public class InMemoryPaymentRepository implements IPaymentRepository {
         boolean keyUsedByOther = store.values().stream().anyMatch(
             t -> t.getIdempotencyKey().equals(transaction.getIdempotencyKey())
                 && !t.getTransactionId().equals(transaction.getTransactionId()));
-        if (keyUsedByOther) {   // same rule as the UNIQUE column in the SQLite schema
+        if (keyUsedByOther) {   // same rule as the UNIQUE column in the PostgreSQL schema
             throw new com.giki.mess.payment.exception.DuplicateTransactionException(
                 transaction.getIdempotencyKey());
         }

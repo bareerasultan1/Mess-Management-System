@@ -53,7 +53,7 @@ locked forever.
 5. credit the ledger, apply the payment to the bill, mark the transaction RECONCILED.
 
 A second guard (`status != INITIATED`) protects after a restart when the in-memory gate is empty.
-The SQLite layer adds a `UNIQUE` constraint on `idempotency_key` as the durable guard (see `PERSISTENCE_AND_BOUNDARIES.md`).
+The PostgreSQL schema adds a `UNIQUE` constraint on `idempotency_key` as the durable guard (see `PERSISTENCE_AND_BOUNDARIES.md`).
 
 ## 5. Asynchronous scan handling (Observer pattern)
 
@@ -61,10 +61,10 @@ The SQLite layer adds a `UNIQUE` constraint on `idempotency_key` as the durable 
 slow or failing billing database therefore cannot freeze the mess-gate turnstile. An exception in
 one observer is logged and contained; other observers still run.
 
-## 5b. SQLite and the identity map
+## 5b. PostgreSQL and the identity map
 
 With a database, two threads could each load their own copy of a student's ledger and each save a
-different balance (lost update). The SQLite repositories therefore return ONE object per id inside
+different balance (lost update). The PostgreSQL repositories therefore return ONE object per id inside
 the process (identity map), so every thread shares the same `ReentrantLock`, and `save()` takes its
 snapshot inside a per-id lock so writes reach the file in order. Test
 `concurrentSaves_noLostUpdateInDatabase` (20 threads) proves the exact total is on disk.

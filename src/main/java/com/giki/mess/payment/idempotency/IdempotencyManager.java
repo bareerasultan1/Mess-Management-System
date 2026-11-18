@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentMap;
  * single atomic operation: exactly one thread gets null back (the winner); every other thread
  * sees the winner's record and is turned away before it can touch the ledger.
  *
- * This is process-local. The SQLite layer adds a UNIQUE constraint on idempotency_key as the
+ * This is process-local. The PostgreSQL schema adds a UNIQUE constraint on idempotency_key as the
  * durable second line of defence across restarts.
  */
 public class IdempotencyManager {

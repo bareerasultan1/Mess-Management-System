@@ -158,6 +158,12 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <!-- demo entry point that needs a real database server; not business logic -->
+                        <exclude>**/DemoRunner.class</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -209,6 +215,18 @@
                     <configLocation>google_checks.xml</configLocation>
                     <failsOnError>false</failsOnError>
                     <consoleOutput>true</consoleOutput>
+                </configuration>
+            </plugin>
+
+            <!-- ── Exec Plugin ─────────────────────────────────────
+                 Lets you run the demo against your PostgreSQL server:
+                 `mvn -q compile exec:java` -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <mainClass>com.giki.mess.DemoRunner</mainClass>
                 </configuration>
             </plugin>
 

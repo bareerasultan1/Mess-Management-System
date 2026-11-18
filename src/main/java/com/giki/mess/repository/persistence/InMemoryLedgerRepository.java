@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentMap;
  * In-memory ledger storage (a thread-safe map). Used by unit tests and the
  * end-to-end test so business logic can be verified without a database.
  * Because it implements ILedgerRepository, the services cannot tell it apart
- * from the SQLite version (Dependency Inversion).
+ * from the PostgreSQL version (Dependency Inversion).
  */
 public class InMemoryLedgerRepository implements ILedgerRepository {
 

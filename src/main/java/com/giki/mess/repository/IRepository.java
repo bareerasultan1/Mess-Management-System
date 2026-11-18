@@ -11,20 +11,20 @@ import java.util.Optional;
  * The repository pattern separates "business logic" from "how data is stored."
  *
  * Without it, your BillingService would look like:
- *   Connection conn = DriverManager.getConnection("jdbc:sqlite:mess.db");
+ *   Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost/mess_db");
  *   Statement stmt = conn.createStatement();
  *   ResultSet rs = stmt.executeQuery("SELECT * FROM bills WHERE ...");
  *   // ... 50 lines of JDBC boilerplate inside your business logic
  *
  * Problems with that:
  *   1. Testing is IMPOSSIBLE — you cannot run unit tests without a real database
- *   2. If you switch from SQLite to MySQL, you must rewrite BillingService
+ *   2. If you switch from PostgreSQL to another database, you must rewrite BillingService
  *   3. SQL is mixed with business rules — code is unreadable
  *
  * With this interface:
  *   - BillingService only sees: repository.save(bill), repository.findById(id)
  *   - For TESTS: you use a simple InMemoryRepository (just a HashMap, no database)
- *   - For PRODUCTION: you swap in a SQLiteRepository — BillingService doesn't care
+ *   - For PRODUCTION: you swap in a PostgresRepository — BillingService doesn't care
  *
  * This is the "D" in SOLID — Dependency Inversion Principle.
  * (BillingService depends on this INTERFACE, not a concrete database class)

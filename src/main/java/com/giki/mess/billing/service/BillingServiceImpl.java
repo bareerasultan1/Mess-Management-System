@@ -33,7 +33,7 @@ public class BillingServiceImpl implements BillingService {
     private final Map<StudentCategory, BillingCalculationStrategy> strategies;
     private static final org.slf4j.Logger LOG =
         org.slf4j.LoggerFactory.getLogger(BillingServiceImpl.class);
-    /** Scan events already billed (thread-safe set; the SQLite layer adds a UNIQUE constraint). */
+    /** Scan events already billed (thread-safe set, in memory only; a database table with a UNIQUE event id is a planned improvement). */
     private final Set<String> recordedScanEvents = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     public BillingServiceImpl(ILedgerRepository ledgers, IBillRepository bills,
