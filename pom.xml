@@ -31,7 +31,9 @@
         <assertj.version>3.25.3</assertj.version>
         <slf4j.version>2.0.13</slf4j.version>
         <logback.version>1.5.6</logback.version>
-        <sqlite.version>3.45.3.0</sqlite.version>
+        <postgresql.version>42.7.3</postgresql.version>
+        <hikari.version>5.1.0</hikari.version>
+        <embedded.postgres.version>2.0.7</embedded.postgres.version>
         <jacoco.version>0.8.12</jacoco.version>
         <checkstyle.version>3.3.1</checkstyle.version>
     </properties>
@@ -93,12 +95,29 @@
 
         <!-- ── DATABASE ──────────────────────────────────────────── -->
 
-        <!-- SQLite JDBC: A tiny, file-based database. No server needed.
-             Perfect for this project — runs entirely inside your laptop. -->
+        <!-- PostgreSQL JDBC driver: lets Java talk to the PostgreSQL server. -->
         <dependency>
-            <groupId>org.xerial</groupId>
-            <artifactId>sqlite-jdbc</artifactId>
-            <version>${sqlite.version}</version>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+        </dependency>
+
+        <!-- HikariCP: connection pool. Opening a PostgreSQL connection is slow, so the
+             application keeps a few open and lends them out. -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${hikari.version}</version>
+        </dependency>
+
+        <!-- Embedded PostgreSQL (TESTS ONLY): starts a real PostgreSQL inside the test run so
+             `mvn verify` works on any machine (and in CI) without installing or configuring a
+             database server. The application itself always talks to a normal PostgreSQL server. -->
+        <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-postgres</artifactId>
+            <version>${embedded.postgres.version}</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

@@ -20,13 +20,14 @@ import com.giki.mess.repository.IPaymentRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
  * One behavioural contract that EVERY repository implementation must satisfy
- * (Liskov Substitution): the in-memory test doubles and the SQLite repositories run the
+ * (Liskov Substitution): the in-memory test doubles and the PostgreSQL repositories run the
  * identical tests, so services behave the same on either.
  */
 abstract class RepositoryContractTest {
@@ -36,6 +37,15 @@ abstract class RepositoryContractTest {
     protected IPaymentRepository payments;
 
     protected abstract void createRepositories() throws Exception;
+
+    /** Releases connections after each test (nothing to do for the in-memory version). */
+    protected void closeRepositories() throws Exception {
+    }
+
+    @AfterEach
+    void tearDownRepositories() throws Exception {
+        closeRepositories();
+    }
 
     @BeforeEach
     void setUpRepositories() throws Exception {

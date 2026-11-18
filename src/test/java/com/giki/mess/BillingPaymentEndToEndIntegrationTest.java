@@ -20,8 +20,9 @@ import com.giki.mess.payment.model.PaymentChannel;
 import com.giki.mess.payment.model.PaymentResponse;
 import com.giki.mess.payment.model.PaymentTransaction;
 import com.giki.mess.payment.model.TransactionStatus;
+import com.giki.mess.repository.DatabaseConfig;
+import com.giki.mess.repository.persistence.TestPostgres;
 import java.math.BigDecimal;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -37,10 +38,9 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Scan to bill to payment on a real SQLite file, including an application restart.
+ * Scan to bill to payment on a real PostgreSQL database, including an application restart.
  * Validation activity for FR-002, FR-003, QA-01, QA-CONC-01.
  */
 @DisplayName("End-to-end: scans -> bill -> JazzCash payment -> duplicate callback -> restart")
@@ -72,19 +72,16 @@ class BillingPaymentEndToEndIntegrationTest {
         }
     }
 
-    @TempDir
-    Path folder;
-
     RecordingAttendance attendance = new RecordingAttendance();
-    Path dbFile;
+    DatabaseConfig database;
 
     @BeforeEach
     void setUp() {
-        dbFile = folder.resolve("mess.db");
+        database = TestPostgres.freshDatabase();
     }
 
     private BillingPaymentModule start() {
-        return BillingPaymentModule.create(dbFile, CLOCK, SECRETS, attendance);
+        return BillingPaymentModule.create(database, CLOCK, SECRETS, attendance);
     }
 
     private void scan25Days(BillingPaymentModule app) throws Exception {
@@ -151,7 +148,7 @@ class BillingPaymentEndToEndIntegrationTest {
             assertThat(ledger.getBalance()).isEqualTo(Money.ZERO);
         }
 
-        // 7. "restart": a brand-new module reads everything back from the SQLite file
+        // 7. "restart": a brand-new module reads everything back from PostgreSQL
         try (BillingPaymentModule restarted = start()) {
             Bill bill = restarted.bills().findById(BILL_ID).orElseThrow();
             assertThat(bill.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
