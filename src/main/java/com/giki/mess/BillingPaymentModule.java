@@ -17,14 +17,14 @@ import com.giki.mess.payment.idempotency.IdempotencyManager;
 import com.giki.mess.payment.model.PaymentChannel;
 import com.giki.mess.payment.service.PaymentService;
 import com.giki.mess.payment.service.PaymentServiceImpl;
+import com.giki.mess.repository.DatabaseConfig;
 import com.giki.mess.repository.IBillRepository;
 import com.giki.mess.repository.ILedgerRepository;
 import com.giki.mess.repository.IPaymentRepository;
-import com.giki.mess.repository.persistence.SqliteBillRepository;
-import com.giki.mess.repository.persistence.SqliteDatabase;
-import com.giki.mess.repository.persistence.SqliteLedgerRepository;
-import com.giki.mess.repository.persistence.SqlitePaymentRepository;
-import java.nio.file.Path;
+import com.giki.mess.repository.persistence.PostgresBillRepository;
+import com.giki.mess.repository.persistence.PostgresDatabase;
+import com.giki.mess.repository.persistence.PostgresLedgerRepository;
+import com.giki.mess.repository.persistence.PostgresPaymentRepository;
 import java.time.Clock;
 import java.util.EnumMap;
 import java.util.Map;
@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
  */
 public final class BillingPaymentModule implements AutoCloseable {
 
+    private final PostgresDatabase database;
     private final ILedgerRepository ledgers;
     private final IBillRepository bills;
     private final IPaymentRepository payments;
@@ -52,13 +53,13 @@ public final class BillingPaymentModule implements AutoCloseable {
     private final EasyPaisaProcessor easyPaisa;
     private final BankTransferProcessor bankTransfer;
 
-    private BillingPaymentModule(Path databaseFile, Clock clock, Map<PaymentChannel, String> secrets,
+    private BillingPaymentModule(DatabaseConfig databaseConfig, Clock clock, Map<PaymentChannel, String> secrets,
                                  AttendanceDataSource attendance) {
-        SqliteDatabase db = SqliteDatabase.forFile(databaseFile);
-        db.initialize();
-        this.ledgers = new SqliteLedgerRepository(db);
-        this.bills = new SqliteBillRepository(db);
-        this.payments = new SqlitePaymentRepository(db);
+        this.database = PostgresDatabase.connect(databaseConfig);
+        database.initialize();
+        this.ledgers = new PostgresLedgerRepository(database);
+        this.bills = new PostgresBillRepository(database);
+        this.payments = new PostgresPaymentRepository(database);
 
         TariffConfiguration tariff = TariffConfiguration.defaults();
         this.billing = new BillingServiceImpl(ledgers, bills, attendance, tariff,
@@ -87,12 +88,15 @@ public final class BillingPaymentModule implements AutoCloseable {
     }
 
     /**
+     * Connects to PostgreSQL, creates the tables if needed and wires every component.
+     *
      * @param secrets one shared secret per gateway (used to verify callback signatures)
+     * @throws com.giki.mess.repository.PersistenceException if the database cannot be reached
      */
-    public static BillingPaymentModule create(Path databaseFile, Clock clock,
+    public static BillingPaymentModule create(DatabaseConfig databaseConfig, Clock clock,
                                               Map<PaymentChannel, String> secrets,
                                               AttendanceDataSource attendance) {
-        return new BillingPaymentModule(databaseFile, clock, secrets, attendance);
+        return new BillingPaymentModule(databaseConfig, clock, secrets, attendance);
     }
 
     public BillingPaymentApi api() {
@@ -122,5 +126,6 @@ public final class BillingPaymentModule implements AutoCloseable {
     @Override
     public void close() {
         attendanceSubject.close();
+        database.close();
     }
 }

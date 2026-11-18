@@ -20,32 +20,32 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * SQLite storage of bills and their itemised lines.
+ * PostgreSQL storage of bills and their itemised lines.
  * A bill and its items are written in ONE transaction: either both are stored or neither.
  * Like the ledger repository it keeps one Bill object per bill id (identity map) so the
  * Bill's own synchronization protects concurrent payments.
  */
-public class SqliteBillRepository implements IBillRepository {
+public class PostgresBillRepository implements IBillRepository {
 
     private static final String UPSERT = """
         INSERT INTO bills (bill_id, student_id, month, year, due_date, base_paisa, rebate_paisa,
                            fine_paisa, discount_paisa, net_paisa, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(bill_id) DO UPDATE SET
-            due_date = excluded.due_date,
-            base_paisa = excluded.base_paisa,
-            rebate_paisa = excluded.rebate_paisa,
-            fine_paisa = excluded.fine_paisa,
-            discount_paisa = excluded.discount_paisa,
-            net_paisa = excluded.net_paisa,
-            status = excluded.status
+        ON CONFLICT (bill_id) DO UPDATE SET
+            due_date = EXCLUDED.due_date,
+            base_paisa = EXCLUDED.base_paisa,
+            rebate_paisa = EXCLUDED.rebate_paisa,
+            fine_paisa = EXCLUDED.fine_paisa,
+            discount_paisa = EXCLUDED.discount_paisa,
+            net_paisa = EXCLUDED.net_paisa,
+            status = EXCLUDED.status
         """;
 
-    private final SqliteDatabase db;
+    private final PostgresDatabase db;
     private final ConcurrentMap<String, Bill> cache = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Object> writeLocks = new ConcurrentHashMap<>();
 
-    public SqliteBillRepository(SqliteDatabase db) {
+    public PostgresBillRepository(PostgresDatabase db) {
         this.db = db;
     }
 
@@ -66,7 +66,7 @@ public class SqliteBillRepository implements IBillRepository {
                         ps.setString(2, bill.getStudentId());
                         ps.setInt(3, bill.getMonth());
                         ps.setInt(4, bill.getYear());
-                        ps.setString(5, bill.getDueDate().toString());
+                        ps.setObject(5, bill.getDueDate());
                         ps.setLong(6, bill.getBaseAmount().paisa());
                         ps.setLong(7, bill.getRebateAmount().paisa());
                         ps.setLong(8, bill.getFineAmount().paisa());
@@ -97,7 +97,7 @@ public class SqliteBillRepository implements IBillRepository {
                 ins.setString(1, item.getItemId());
                 ins.setString(2, bill.getBillId());
                 ins.setString(3, item.getStudentId());
-                ins.setString(4, item.getScanTime().toString());
+                ins.setObject(4, item.getScanTime());
                 ins.setString(5, item.getMealType().name());
                 ins.setLong(6, item.getRateApplied().paisa());
                 ins.addBatch();
@@ -122,7 +122,7 @@ public class SqliteBillRepository implements IBillRepository {
                         }
                         Bill loaded = Bill.restore(billId, rs.getString("student_id"),
                             rs.getInt("month"), rs.getInt("year"),
-                            LocalDate.parse(rs.getString("due_date")),
+                            rs.getObject("due_date", LocalDate.class),
                             Money.ofPaisa(rs.getLong("base_paisa")),
                             Money.ofPaisa(rs.getLong("rebate_paisa")),
                             Money.ofPaisa(rs.getLong("fine_paisa")),
@@ -148,7 +148,7 @@ public class SqliteBillRepository implements IBillRepository {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     items.add(new BillItem(rs.getString(1), billId, rs.getString(2),
-                        LocalDateTime.parse(rs.getString(3)), MealType.valueOf(rs.getString(4)),
+                        rs.getObject(3, LocalDateTime.class), MealType.valueOf(rs.getString(4)),
                         Money.ofPaisa(rs.getLong(5))));
                 }
             }
@@ -156,13 +156,14 @@ public class SqliteBillRepository implements IBillRepository {
         return items;
     }
 
-    private List<Bill> findByIds(String sql, String... params) {
+    /** Runs a query that returns bill ids, then loads each bill (parameters are never concatenated). */
+    private List<Bill> findByIds(String sql, Object... params) {
         try {
             List<String> ids = db.read(c -> {
                 List<String> found = new ArrayList<>();
                 try (PreparedStatement ps = c.prepareStatement(sql)) {
                     for (int i = 0; i < params.length; i++) {
-                        ps.setString(i + 1, params[i]);
+                        ps.setObject(i + 1, params[i]);
                     }
                     try (ResultSet rs = ps.executeQuery()) {
                         while (rs.next()) {
@@ -189,16 +190,14 @@ public class SqliteBillRepository implements IBillRepository {
 
     @Override
     public Optional<Bill> findByStudentAndMonth(String studentId, int month, int year) {
-        List<Bill> found = findByIds(
-            "SELECT bill_id FROM bills WHERE student_id = ? AND month = " + month + " AND year = " + year,
-            studentId);
-        return found.stream().findFirst();
+        return findByIds("SELECT bill_id FROM bills WHERE student_id = ? AND month = ? AND year = ?",
+            studentId, month, year).stream().findFirst();
     }
 
     @Override
     public List<Bill> findOverdueBills() {
-        return findByIds("SELECT bill_id FROM bills WHERE status <> 'PAID' AND due_date < ?",
-            LocalDate.now().toString());
+        return findByIds("SELECT bill_id FROM bills WHERE status <> 'PAID' AND due_date < ? ORDER BY due_date, bill_id",
+            LocalDate.now());
     }
 
     @Override

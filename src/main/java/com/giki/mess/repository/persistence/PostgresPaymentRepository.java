@@ -16,28 +16,33 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.postgresql.util.PSQLException;
 
 /**
- * SQLite storage of payment transactions.
+ * PostgreSQL storage of payment transactions.
  *
- * DURABLE IDEMPOTENCY: the idempotency_key column is UNIQUE. Even if the in-memory
- * IdempotencyManager is empty after a restart, the database refuses a second transaction with
- * the same key, which this class reports as a DuplicateTransactionException.
+ * DURABLE IDEMPOTENCY: the idempotency_key column has a UNIQUE constraint
+ * (uq_payment_idempotency). Even if the in-memory IdempotencyManager is empty after a restart,
+ * the database refuses a second transaction with the same key, which this class reports as a
+ * DuplicateTransactionException.
  */
-public class SqlitePaymentRepository implements IPaymentRepository {
+public class PostgresPaymentRepository implements IPaymentRepository {
 
     private static final String UPSERT = """
         INSERT INTO payment_transactions (transaction_id, student_id, bill_id, amount_paisa, channel,
                                           idempotency_key, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(transaction_id) DO UPDATE SET status = excluded.status
+        ON CONFLICT (transaction_id) DO UPDATE SET status = EXCLUDED.status
         """;
 
-    private final SqliteDatabase db;
+    private static final String UNIQUE_VIOLATION = "23505";
+    private static final String IDEMPOTENCY_CONSTRAINT = "uq_payment_idempotency";
+
+    private final PostgresDatabase db;
     private final ConcurrentMap<String, PaymentTransaction> cache = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Object> writeLocks = new ConcurrentHashMap<>();
 
-    public SqlitePaymentRepository(SqliteDatabase db) {
+    public PostgresPaymentRepository(PostgresDatabase db) {
         this.db = db;
     }
 
@@ -56,13 +61,13 @@ public class SqlitePaymentRepository implements IPaymentRepository {
                         ps.setString(5, tx.getChannel().name());
                         ps.setString(6, tx.getIdempotencyKey());
                         ps.setString(7, status.name());
-                        ps.setString(8, tx.getCreatedAt().toString());
+                        ps.setObject(8, tx.getCreatedAt());
                         ps.executeUpdate();
                     }
                     return null;
                 });
             } catch (SQLException e) {
-                if (e.getMessage() != null && e.getMessage().contains("payment_transactions.idempotency_key")) {
+                if (isIdempotencyViolation(e)) {
                     throw new DuplicateTransactionException(tx.getIdempotencyKey());
                 }
                 throw new PersistenceException("Could not save payment " + tx.getTransactionId(), e);
@@ -72,14 +77,21 @@ public class SqlitePaymentRepository implements IPaymentRepository {
         return tx;
     }
 
+    private static boolean isIdempotencyViolation(SQLException e) {
+        return e instanceof PSQLException p
+            && UNIQUE_VIOLATION.equals(p.getSQLState())
+            && p.getServerErrorMessage() != null
+            && IDEMPOTENCY_CONSTRAINT.equals(p.getServerErrorMessage().getConstraint());
+    }
+
     @Override
     public Optional<PaymentTransaction> findById(String transactionId) {
         PaymentTransaction cached = cache.get(transactionId);
         if (cached != null) {
             return Optional.of(cached);
         }
-        List<PaymentTransaction> found = query("SELECT * FROM payment_transactions WHERE transaction_id = ?", transactionId);
-        return found.stream().findFirst();
+        return query("SELECT * FROM payment_transactions WHERE transaction_id = ?", transactionId)
+            .stream().findFirst();
     }
 
     @Override
@@ -114,7 +126,7 @@ public class SqlitePaymentRepository implements IPaymentRepository {
                                 Money.ofPaisa(rs.getLong("amount_paisa")),
                                 PaymentChannel.valueOf(rs.getString("channel")),
                                 rs.getString("idempotency_key"),
-                                LocalDateTime.parse(rs.getString("created_at")),
+                                rs.getObject("created_at", LocalDateTime.class),
                                 TransactionStatus.valueOf(rs.getString("status")));
                             PaymentTransaction existing = cache.putIfAbsent(id, loaded);
                             result.add(existing != null ? existing : loaded);

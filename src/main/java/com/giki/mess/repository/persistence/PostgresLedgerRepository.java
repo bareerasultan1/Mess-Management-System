@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * SQLite storage of student ledgers.
+ * PostgreSQL storage of student ledgers.
  *
  * IDENTITY MAP: the repository hands out ONE StudentLedger object per student inside the
  * process. That keeps the object's ReentrantLock meaningful: two threads changing the same
@@ -27,23 +27,23 @@ import java.util.concurrent.ConcurrentMap;
  * WRITE ORDER: the snapshot is taken INSIDE a per-student lock together with the SQL write, so
  * a slower thread can never overwrite a newer balance with an older one.
  */
-public class SqliteLedgerRepository implements ILedgerRepository {
+public class PostgresLedgerRepository implements ILedgerRepository {
 
     private static final String UPSERT = """
         INSERT INTO student_ledgers (student_id, category, balance_paisa, unbilled_meals, status, updated_at)
         VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(student_id) DO UPDATE SET
-            balance_paisa = excluded.balance_paisa,
-            unbilled_meals = excluded.unbilled_meals,
-            status = excluded.status,
-            updated_at = excluded.updated_at
+        ON CONFLICT (student_id) DO UPDATE SET
+            balance_paisa = EXCLUDED.balance_paisa,
+            unbilled_meals = EXCLUDED.unbilled_meals,
+            status = EXCLUDED.status,
+            updated_at = EXCLUDED.updated_at
         """;
 
-    private final SqliteDatabase db;
+    private final PostgresDatabase db;
     private final ConcurrentMap<String, StudentLedger> cache = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Object> writeLocks = new ConcurrentHashMap<>();
 
-    public SqliteLedgerRepository(SqliteDatabase db) {
+    public PostgresLedgerRepository(PostgresDatabase db) {
         this.db = db;
     }
 
@@ -60,7 +60,7 @@ public class SqliteLedgerRepository implements ILedgerRepository {
                         ps.setLong(3, s.balance().paisa());
                         ps.setInt(4, s.unbilledMealCount());
                         ps.setString(5, s.status().name());
-                        ps.setString(6, LocalDateTime.now().toString());
+                        ps.setObject(6, LocalDateTime.now());
                         ps.executeUpdate();
                     }
                     return null;
