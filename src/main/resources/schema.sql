@@ -33,3 +33,9 @@ create index if not exists campus_case_escalated on campus_case(created desc,ref
 create table if not exists campus_rating (
     id uuid primary key, menu_id uuid not null references campus_menu(id), score smallint not null check(score between 1 and 5)
 );
+
+create table if not exists campus_reminder (
+    bill_id varchar(100) primary key, recipient varchar(100), due_day date, next_at timestamptz,
+    check (next_at is null or (recipient is not null and due_day is not null))
+);
+create index if not exists campus_reminder_due on campus_reminder(next_at,bill_id) where next_at is not null;

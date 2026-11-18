@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GIKI · Mess desk</title><link rel="stylesheet" href="/campus.css"><script src="/app.js" defer></script></head>
+<body><header><div><span>GIKI · Campus dining</span><h1>Mess desk</h1></div><div id="account"></div></header>
+<main><p id="notice" role="status" tabindex="-1">Opening the desk…</p>
+<section id="menus" hidden><h2>Meal menus</h2><form id="filter"><label>Date<input name="day" type="date"></label><label>Meal<select name="meal"><option value="">All meals</option><option>BREAKFAST</option><option>LUNCH</option><option>DINNER</option></select></label><button>Find menus</button></form><div id="menuList"></div></section>
+<section id="draft" hidden><h2>Create a draft</h2><form id="create"><label>Date<input type="date" name="day" required></label><label>Meal<select name="meal"><option>BREAKFAST</option><option>LUNCH</option><option>DINNER</option></select></label><label>Dishes<input name="dishes" maxlength="500" required></label><label><input name="special" type="checkbox"> Special meal</label><button>Save draft</button></form></section>
+<section id="alerts" hidden><h2>My inbox</h2><button id="refreshInbox">Refresh inbox</button><div id="inboxList"></div></section>
+<section id="submitPanel" hidden><h2>Anonymous feedback</h2><form id="submitCase"><label>Type<select name="kind"><option>COMPLAINT</option><option>FEEDBACK</option></select></label><label>Message<textarea name="body" maxlength="2000" required></textarea></label><button>Submit anonymously</button></form><output id="receipt"></output></section>
+<section><h2>Track a submission</h2><form id="track"><label>Private tracking reference<input name="ref" required autocomplete="off"></label><button>Check status</button></form><output id="progress"></output></section>
+<section id="queue" hidden><h2 id="caseTitle">Complaint and feedback queue</h2><button id="refreshCases">Refresh cases</button><div id="caseList"></div></section>
+<section id="fixtures" hidden><h2>Demo fixtures</h2><form id="fixture"><label>Simulated producer<select name="kind"><option>BILL</option><option>DUE</option><option>OVERDUE</option><option>ANNOUNCEMENT</option></select></label><button>Send fixture</button></form><form id="replay"><label>Delivered event ID<input name="id" required></label><button>Replay delivery</button></form></section>
+</main></body></html>
