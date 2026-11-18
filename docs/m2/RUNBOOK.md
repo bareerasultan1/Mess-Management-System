@@ -63,3 +63,13 @@ For offline subset coverage, use `pwsh -File scripts/offline-coverage.ps1 -Agent
 - Production needs an agreed identity provider and student roster. The default profile contains no demo users or fixture endpoints. The server derives inbox ownership from the authenticated principal. Its ID must exactly match the roster and the producer's recipient ID.
 - Inspect outstanding delivery with `select state,count(*) from campus_event group by state;` and `select id,kind,attempts,available from campus_event where state='DEAD';`. Fix the missing recipient or other cause before a controlled retry. Replay of completed events through the UI exists only in the demo profile.
 - Application logging excludes request bodies and SQL bindings. The demo launcher configures PostgreSQL's service role to suppress bind values, failing statements and verbose error detail. Apply equivalent database and proxy logging settings when integrating on a shared server.
+
+## Reproduce same-record contention
+
+With the stopped, disposable standalone cluster from the offline setup, run:
+
+```powershell
+python scripts/postgres-check.py --pg-bin 'C:\Program Files\PostgreSQL\17\bin' --standalone-data .demo/standalone --held-locks
+```
+
+This mode temporarily enables prepared transactions for its own backends. It uses a new schema, releases each held transaction and removes the schema. The full Maven Verify action also runs PostgresBehaviorTest, including a waiting-editor test and a deliberately inverted two-row lock order as a deadlock detection control.

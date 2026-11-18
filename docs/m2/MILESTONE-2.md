@@ -123,3 +123,19 @@ The local history begins at f599d23. b15d551 records failing specifications, 1ef
 **AI Usage Log.** OpenAI Codex (GPT-6), 18 November 2026. The user requested implementation, contract inspection, tests, a working demo and honest verification. Adopted material includes Java/Spring code, database schema, test harnesses, UI, launcher, CI configuration and this evidence pack. The assistant revised the text validator after a genuine failing test, extracted the worker pool and shared queries, added enrollment-aware replay, and addressed static-analysis findings. Verification is recorded above. Individual human review, explanation practice and acceptance remain with the contributor. No claim of unaided authorship or team approval is made.
 
 **Sources.** Construction M1 proposal §§1.3–3, 5–6; SQA M1 plan §§2–4, 7; updated joint rubric §§6–9. The rubric awards 20% of the M2 SE431 team rubric to the formal inspection. It is deferred for this pass. The final ≥60% core coverage gate is an M3 requirement; M2 asks for current measured coverage.
+
+### Concurrent access to the same record
+
+Five rounds of five scenarios passed (25 executions) on PostgreSQL 17.4 using production SQL. Each test left one transaction prepared, preserving its database locks, then ran the competing operation in another backend. The test runner used a 300 ms lock timeout to distinguish an expected wait (SQLSTATE 55P03) from a circular deadlock (40P01), a stalled statement, or an unexpected write. The 300 ms setting applies only to this test.
+
+| Contention scenario | Observed outcome |
+|---|---|
+| Two staff edit the same published menu while a student reads | The reader saw the last committed dishes. The competing write hit the held lock. After commit the old version matched zero rows and editing with the refreshed version succeeded. |
+| A worker holds the oldest ready event | Another claim selected and delivered the next event. With only the locked work left, polling returned empty. Rolling back the first claim made its event claimable again. Both finished with one receipt each. |
+| Two deliveries insert the same inbox receipt | The second insert waited on the uncommitted unique key. Replaying after commit inserted zero rows, leaving one receipt for the event and student. |
+| Staff resolution holds the case before the escalation scan | The scan skipped that case and escalated its neighbor once. After resolution committed, the resolved case was excluded. |
+| Escalation holds the case before staff resolution | A second scan skipped the held case. Resolution succeeded after the first transaction committed and retained the original escalation timestamp. |
+
+The test checks finite progress after release. A continuously locked row can still be postponed. A prepared holder can retain a lock but cannot request a second one, so this method cannot produce a circular wait. The live JDBC suite now includes a test that observes an actual waiting editor through pg_blocking_pids and a deliberate two-row, opposite-order lock test that requires exactly one 40P01 victim and one commit. Those live tests await an environment with Maven dependencies and PostgreSQL TCP access.
+
+**AI Usage Log update.** Codex added the held-lock scenarios, live controls and finite worker-test deadlines following the contributor's contention question. The raw PostgreSQL results are in docs/m2/evidence/record-contention.txt. No production locking or retry policy was changed in this follow-up.

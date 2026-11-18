@@ -10,6 +10,8 @@ import shutil
 import subprocess
 import uuid
 
+from lock_checks import check_held_locks
+
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "src/main/resources"
 parser = argparse.ArgumentParser()
@@ -17,7 +19,10 @@ mode = parser.add_mutually_exclusive_group(required=True)
 mode.add_argument("--standalone-data", type=Path)
 mode.add_argument("--database", help="Test database name for psql; PGHOST/PGPORT/PGUSER select connection")
 parser.add_argument("--pg-bin", type=Path)
+parser.add_argument("--held-locks", action="store_true", help="Run the held-transaction suite in a stopped disposable cluster")
 args = parser.parse_args()
+if args.held_locks and not args.standalone_data:
+    parser.error("--held-locks requires --standalone-data")
 schema = "m2check_" + uuid.uuid4().hex
 menu, event, rolled, complaint, closed, feedback = (str(uuid.uuid4()) for _ in range(6))
 now = "2026-11-18 00:00:00+00"
@@ -40,7 +45,9 @@ def run(statements):
     exe = str(args.pg_bin / name) if args.pg_bin else shutil.which(name)
     if not exe: raise SystemExit(name+" missing from PATH")
     if args.standalone_data:
-        cmd = [exe,"--single","-D",str(args.standalone_data.resolve()),"-j","postgres"]
+        cmd = [exe,"--single","-D",str(args.standalone_data.resolve()),"-j"]
+        if args.held_locks: cmd.extend(["-c","max_prepared_transactions=8"])
+        cmd.append("postgres")
     else:
         cmd = [exe,"-X","-tA","-v","ON_ERROR_STOP=1","-d",args.database]
     proc = subprocess.run(cmd,input="\n\n".join(s.strip().rstrip(";")+";" for s in statements)+"\n\n",
@@ -61,7 +68,12 @@ creation = False
 try:
     run([f"create schema {schema}"])
     creation = True
-    run([path,(RES/"schema.sql").read_text(),(RES/"demo-students.sql").read_text(),
+    run([path,(RES/"schema.sql").read_text(),(RES/"demo-students.sql").read_text()])
+    if args.held_locks:
+        check_held_locks(run, sql, expect, schema)
+        print("PASS all five PostgreSQL held-transaction scenarios; no TCP or Spring involved")
+        raise SystemExit(0)
+    run([path,
          f"insert into campus_menu(id,day,meal,dishes,special) values('{menu}','2026-11-18','LUNCH','Daal',false)",
          expect("not exists(select from campus_menu where published)","draft visibility"),
          "begin",sql("publish_menu",menu,0),insert_event(rolled),"rollback",

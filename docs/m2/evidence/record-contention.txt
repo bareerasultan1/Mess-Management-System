@@ -1,0 +1,37 @@
+postgres (PostgreSQL) 17.4
+Round 1
+PASS published menu: reader saw previous commit; competing editor got 55P03 while held; stale edit affected 0 rows after commit; refreshed edit succeeded
+PASS outbox: locked oldest event skipped; second event delivered; all-locked poll empty; rolled-back claim reclaimed; 2 events done and exactly 2 receipts
+PASS duplicate delivery: second insert contended on the unique key while held; replay after commit inserted 0 rows; exactly 1 receipt
+PASS resolution first: escalation skipped locked complaint, escalated its neighbor once, excluded resolved complaint after commit
+PASS escalation first: second scan skipped held row; concurrent resolve got 55P03; resolution after release retained the one escalation
+PASS all five PostgreSQL held-transaction scenarios; no TCP or Spring involved
+Round 2
+PASS published menu: reader saw previous commit; competing editor got 55P03 while held; stale edit affected 0 rows after commit; refreshed edit succeeded
+PASS outbox: locked oldest event skipped; second event delivered; all-locked poll empty; rolled-back claim reclaimed; 2 events done and exactly 2 receipts
+PASS duplicate delivery: second insert contended on the unique key while held; replay after commit inserted 0 rows; exactly 1 receipt
+PASS resolution first: escalation skipped locked complaint, escalated its neighbor once, excluded resolved complaint after commit
+PASS escalation first: second scan skipped held row; concurrent resolve got 55P03; resolution after release retained the one escalation
+PASS all five PostgreSQL held-transaction scenarios; no TCP or Spring involved
+Round 3
+PASS published menu: reader saw previous commit; competing editor got 55P03 while held; stale edit affected 0 rows after commit; refreshed edit succeeded
+PASS outbox: locked oldest event skipped; second event delivered; all-locked poll empty; rolled-back claim reclaimed; 2 events done and exactly 2 receipts
+PASS duplicate delivery: second insert contended on the unique key while held; replay after commit inserted 0 rows; exactly 1 receipt
+PASS resolution first: escalation skipped locked complaint, escalated its neighbor once, excluded resolved complaint after commit
+PASS escalation first: second scan skipped held row; concurrent resolve got 55P03; resolution after release retained the one escalation
+PASS all five PostgreSQL held-transaction scenarios; no TCP or Spring involved
+Round 4
+PASS published menu: reader saw previous commit; competing editor got 55P03 while held; stale edit affected 0 rows after commit; refreshed edit succeeded
+PASS outbox: locked oldest event skipped; second event delivered; all-locked poll empty; rolled-back claim reclaimed; 2 events done and exactly 2 receipts
+PASS duplicate delivery: second insert contended on the unique key while held; replay after commit inserted 0 rows; exactly 1 receipt
+PASS resolution first: escalation skipped locked complaint, escalated its neighbor once, excluded resolved complaint after commit
+PASS escalation first: second scan skipped held row; concurrent resolve got 55P03; resolution after release retained the one escalation
+PASS all five PostgreSQL held-transaction scenarios; no TCP or Spring involved
+Round 5
+PASS published menu: reader saw previous commit; competing editor got 55P03 while held; stale edit affected 0 rows after commit; refreshed edit succeeded
+PASS outbox: locked oldest event skipped; second event delivered; all-locked poll empty; rolled-back claim reclaimed; 2 events done and exactly 2 receipts
+PASS duplicate delivery: second insert contended on the unique key while held; replay after commit inserted 0 rows; exactly 1 receipt
+PASS resolution first: escalation skipped locked complaint, escalated its neighbor once, excluded resolved complaint after commit
+PASS escalation first: second scan skipped held row; concurrent resolve got 55P03; resolution after release retained the one escalation
+PASS all five PostgreSQL held-transaction scenarios; no TCP or Spring involved
+PASS 5 rounds, 25 held-lock scenario executions
