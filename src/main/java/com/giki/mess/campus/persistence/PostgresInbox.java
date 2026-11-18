@@ -21,14 +21,7 @@ public class PostgresInbox implements AlertSubscriber {
             return null;
         }
         // Keep cursor movement independent of how many inserts survived replay.
-        List<String> page = db.sql("""
-            with audience as materialized (
-                select id from campus_student where id > ? order by id limit 128
-            ), inserted as (
-                insert into campus_inbox(event_id,recipient,delivered) select ?,id,? from audience on conflict do nothing
-            )
-            select id from audience order by id
-            """).params(after == null ? "" : after, e.id(), now).query(String.class).list();
+        List<String> page = db.sql(Queries.DELIVER_PAGE).params(after == null ? "" : after, e.id(), now).query(String.class).list();
         return page.size() == 128 ? page.getLast() : null;
     }
 }

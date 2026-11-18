@@ -1,5 +1,6 @@
 package com.giki.mess.campus.feedback;
 
+import com.giki.mess.campus.persistence.Queries;
 import java.sql.Timestamp;
 import java.time.*;
 import java.util.*;
@@ -38,28 +39,16 @@ public class Feedback {
     }
     public void move(UUID ref, String from, String to) {
         if (from == null || !Rules.transition(from,to)) throw new IllegalArgumentException("Invalid status transition.");
-        int n = db.sql("""
-            update campus_case set status=?,resolved=case when ?='RESOLVED' then ? else resolved end
-            where ref=? and status=?
-            """).params(to,to,Timestamp.from(clock.instant()),ref,from).update();
+        int n = db.sql(Queries.MOVE_CASE).params(to,to,Timestamp.from(clock.instant()),ref,from).update();
         if (n == 0) throw new Conflict();
     }
     @Transactional
     public int escalate() {
         var now = clock.instant();
-        return db.sql("""
-            with eligible as (
-                select ref from campus_case where kind='COMPLAINT' and escalated is null
-                  and status in ('OPEN','IN_REVIEW') and created<=?
-                order by created,ref limit 64 for update skip locked
-            )
-            update campus_case c set escalated=? from eligible where c.ref=eligible.ref
-            """).params(Timestamp.from(now.minus(threshold)),Timestamp.from(now)).update();
+        return db.sql(Queries.ESCALATE_CASES).params(Timestamp.from(now.minus(threshold)),Timestamp.from(now)).update();
     }
     public void rate(UUID menu, int value) {
-        int n = db.sql("""
-            insert into campus_rating(id,menu_id,score) select ?,id,? from campus_menu where id=? and published
-            """).params(UUID.randomUUID(),Rules.rating(value),menu).update();
+        int n = db.sql(Queries.RATE_MEAL).params(UUID.randomUUID(),Rules.rating(value),menu).update();
         if (n == 0) throw new IllegalArgumentException("Choose a published meal.");
     }
 }

@@ -14,10 +14,7 @@ public class PostgresOutbox implements EventPublisher {
     @Transactional
     public void publish(AlertEvent e) {
         var time = Timestamp.from(e.occurred().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
-        int written = db.sql("""
-            insert into campus_event(id,occurred,kind,recipient,summary,available) values (?,?,?,?,?,?)
-            on conflict (id) do nothing
-            """).param(e.id()).param(time).param(e.kind().name()).param(e.recipient()).param(e.summary()).param(time).update();
+        int written = db.sql(Queries.INSERT_EVENT).param(e.id()).param(time).param(e.kind().name()).param(e.recipient()).param(e.summary()).param(time).update();
         if (written == 0 && !db.sql("""
             select exists(select 1 from campus_event where id=? and occurred=? and kind=?
               and recipient is not distinct from cast(? as varchar) and summary=?)

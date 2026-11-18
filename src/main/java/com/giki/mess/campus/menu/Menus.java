@@ -1,5 +1,6 @@
 package com.giki.mess.campus.menu;
 
+import com.giki.mess.campus.persistence.Queries;
 import com.giki.mess.campus.contract.*;
 import com.giki.mess.campus.domain.Rules;
 import com.giki.mess.campus.domain.Conflict;
@@ -29,18 +30,12 @@ public class Menus {
     }
     @Transactional
     public void edit(UUID id, long version, String dishes, boolean special) {
-        Menu saved = db.sql("""
-            update campus_menu set dishes=?,special=?,version=version+1 where id=? and version=?
-            returning *
-            """).params(Rules.text(dishes,500), special, id, version).query(Menu.class).optional().orElseThrow(Conflict::new);
+        Menu saved = db.sql(Queries.EDIT_MENU).params(Rules.text(dishes,500), special, id, version).query(Menu.class).optional().orElseThrow(Conflict::new);
         if (saved.published()) announce(saved);
     }
     @Transactional
     public UUID publish(UUID id, long version) {
-        Menu saved = db.sql("""
-            update campus_menu set published=true,version=version+1 where id=? and version=? and not published
-            returning *
-            """).params(id,version).query(Menu.class).optional().orElseThrow(Conflict::new);
+        Menu saved = db.sql(Queries.PUBLISH_MENU).params(id,version).query(Menu.class).optional().orElseThrow(Conflict::new);
         return announce(saved);
     }
     private UUID announce(Menu menu) {

@@ -4,24 +4,17 @@ import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.test.context.ActiveProfiles;
 import com.giki.mess.campus.menu.Menus;
 import com.giki.mess.campus.alerts.Delivery;
 
 import static org.assertj.core.api.Assertions.*;
 
-@SpringBootTest(properties="mess.scheduling=false")
-@ActiveProfiles("demo")
-class MenuSliceTest {
+class MenuSliceTest extends PostgresSuite {
     @Autowired Menus menus;
     @Autowired Delivery delivery;
-    @Autowired JdbcClient db;
 
     @Test void publishedMenuSurvivesReplayWithOneAlertPerStudent() {
         var day = LocalDate.of(2190, 1, 1);
-        db.sql("delete from campus_menu where day=:day").param("day", day).update();
         var id = menus.create(day, "LUNCH", "Chana pulao", false);
         assertThat(menus.list(day, "LUNCH", false, 0)).isEmpty();
         UUID event = menus.publish(id, 0);

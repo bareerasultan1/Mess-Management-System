@@ -1,5 +1,6 @@
 package com.giki.mess.campus.alerts;
 
+import com.giki.mess.campus.persistence.Queries;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.util.UUID;
@@ -27,10 +28,7 @@ public class Delivery {
     }
     public boolean runOne() {
         return Boolean.TRUE.equals(outer.execute(tx -> {
-            var found = db.sql("""
-                select * from campus_event where state='READY' and available<=?
-                order by available,id limit 1 for update skip locked
-                """).param(Timestamp.from(clock.instant())).query((r,n) -> new Claim(
+            var found = db.sql(Queries.CLAIM_EVENT).param(Timestamp.from(clock.instant())).query((r,n) -> new Claim(
                     new AlertEvent(r.getObject("id",UUID.class), r.getTimestamp("occurred").toInstant(),
                         AlertEvent.Kind.valueOf(r.getString("kind")),r.getString("recipient"),r.getString("summary")),
                     r.getString("cursor_id"),r.getInt("attempts"))).optional();
