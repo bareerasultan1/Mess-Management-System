@@ -1,0 +1,131 @@
+src\test\java\com\giki\mess\campus\DomainChecks.java:5: error: package com.giki.mess.campus.domain does not exist
+import com.giki.mess.campus.domain.Rules;
+                                  ^
+src\test\java\com\giki\mess\campus\DomainChecks.java:6: error: package com.giki.mess.campus.contract does not exist
+import com.giki.mess.campus.contract.AlertEvent;
+                                    ^
+src\test\java\com\giki\mess\campus\DomainChecks.java:7: error: package com.giki.mess.campus.contract does not exist
+import com.giki.mess.campus.contract.BillingAdapter;
+                                    ^
+src\test\java\com\giki\mess\campus\DomainChecks.java:22: error: cannot find symbol
+        for (int value : new int[]{1, 3, 5}) check(Rules.rating(value) == value);
+                                                   ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:23: error: cannot find symbol
+        for (int value : new int[]{-1, 0, 6}) rejects(() -> Rules.rating(value));
+                                                            ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:24: error: cannot find symbol
+        check(Rules.text("  Daal  ", 4).equals("Daal"));
+              ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:25: error: cannot find symbol
+        rejects(() -> Rules.text("  ", 10));
+                      ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:26: error: cannot find symbol
+        rejects(() -> Rules.text("large", 4));
+                      ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:27: error: cannot find symbol
+        rejects(() -> Rules.text(null, 4));
+                      ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:28: error: cannot find symbol
+        check(Rules.transition("OPEN","IN_REVIEW"));
+              ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:29: error: cannot find symbol
+        check(Rules.transition("IN_REVIEW","RESOLVED"));
+              ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:30: error: cannot find symbol
+        check(Rules.transition("RESOLVED","CLOSED"));
+              ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:31: error: cannot find symbol
+        check(!Rules.transition("CLOSED","OPEN"));
+               ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:32: error: cannot find symbol
+        check(!Rules.transition("OPEN","RESOLVED"));
+               ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:33: error: cannot find symbol
+        check(Rules.meal("LUNCH").equals("LUNCH"));
+              ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:34: error: cannot find symbol
+        rejects(() -> Rules.meal("SNACK"));
+                      ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:38: error: cannot find symbol
+        check(Rules.dueKind(due, Clock.fixed(midnight.minusNanos(1),zone)).isEmpty());
+              ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:39: error: cannot find symbol
+        check(Rules.dueKind(due, Clock.fixed(midnight,zone)).orElseThrow() == AlertEvent.Kind.DUE);
+              ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:39: error: package AlertEvent does not exist
+        check(Rules.dueKind(due, Clock.fixed(midnight,zone)).orElseThrow() == AlertEvent.Kind.DUE);
+                                                                                        ^
+src\test\java\com\giki\mess\campus\DomainChecks.java:40: error: cannot find symbol
+        check(Rules.dueKind(due, Clock.fixed(midnight.plusSeconds(86400).minusNanos(1),zone)).orElseThrow() == AlertEvent.Kind.DUE);
+              ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:40: error: package AlertEvent does not exist
+        check(Rules.dueKind(due, Clock.fixed(midnight.plusSeconds(86400).minusNanos(1),zone)).orElseThrow() == AlertEvent.Kind.DUE);
+                                                                                                                         ^
+src\test\java\com\giki\mess\campus\DomainChecks.java:41: error: cannot find symbol
+        check(Rules.dueKind(due, Clock.fixed(midnight.plusSeconds(86400),zone)).orElseThrow() == AlertEvent.Kind.OVERDUE);
+              ^
+  symbol:   variable Rules
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:41: error: package AlertEvent does not exist
+        check(Rules.dueKind(due, Clock.fixed(midnight.plusSeconds(86400),zone)).orElseThrow() == AlertEvent.Kind.OVERDUE);
+                                                                                                           ^
+src\test\java\com\giki\mess\campus\DomainChecks.java:43: error: package BillingAdapter does not exist
+        var wire = new BillingAdapter.Notice(id, midnight, "student", "BILL_ISSUED");
+                                     ^
+src\test\java\com\giki\mess\campus\DomainChecks.java:44: error: cannot find symbol
+        var event = BillingAdapter.translate(wire);
+                    ^
+  symbol:   variable BillingAdapter
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:46: error: package AlertEvent does not exist
+        check(event.kind() == AlertEvent.Kind.BILL && event.recipient().equals("student"));
+                                        ^
+src\test\java\com\giki\mess\campus\DomainChecks.java:47: error: package BillingAdapter does not exist
+        rejects(() -> BillingAdapter.translate(new BillingAdapter.Notice(id,midnight,"student","PAID")));
+                                                                 ^
+src\test\java\com\giki\mess\campus\DomainChecks.java:47: error: cannot find symbol
+        rejects(() -> BillingAdapter.translate(new BillingAdapter.Notice(id,midnight,"student","PAID")));
+                      ^
+  symbol:   variable BillingAdapter
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:48: error: cannot find symbol
+        rejects(() -> new AlertEvent(id,midnight,AlertEvent.Kind.BILL,null,"Bill available"));
+                          ^
+  symbol:   class AlertEvent
+  location: class DomainChecks
+src\test\java\com\giki\mess\campus\DomainChecks.java:48: error: package AlertEvent does not exist
+        rejects(() -> new AlertEvent(id,midnight,AlertEvent.Kind.BILL,null,"Bill available"));
+                                                           ^
+30 errors
