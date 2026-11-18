@@ -30,6 +30,7 @@ class Portal {
     record Move(String from,String to) {}
     record Rating(UUID menu,int score) {}
     @GetMapping("/session") Map<String,Object> session(Authentication auth,CsrfToken token) {
+        if (auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) auth=null;
         return Map.of("name",auth==null?"":auth.getName(),"roles",auth==null?List.of():auth.getAuthorities().stream()
             .map(r->r.getAuthority()).toList(),"csrf",token.getToken(),"demo",env.acceptsProfiles(Profiles.of("demo")));
     }

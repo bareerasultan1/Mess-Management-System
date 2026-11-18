@@ -32,6 +32,12 @@ class PortalAccessTest extends PostgresSuite {
         http.perform(get("/api/admin/escalations").with(user("staff").roles("STAFF"))).andExpect(status().isForbidden());
         http.perform(get("/api/admin/escalations").with(user("admin").roles("ADMIN"))).andExpect(status().isOk());
     }
+    @Test void fractionalRatingIsRejectedAtTheHttpBoundary() throws Exception {
+        var id=menus.create(LocalDate.of(2026,11,18),"LUNCH","Daal",false);
+        menus.publish(id,0);
+        http.perform(post("/api/student/ratings").with(csrf()).with(user("student").roles("STUDENT"))
+            .contentType("application/json").content("{\"menu\":\""+id+"\",\"score\":5.9}")).andExpect(status().isBadRequest());
+    }
     @Test void publicTrackingAndStudentInboxAreMinimal() throws Exception {
         var ref=feedback.submit("COMPLAINT","Private fixture text");
         http.perform(post("/api/track").with(csrf()).contentType("application/json").content("{\"ref\":\""+ref+"\"}"))

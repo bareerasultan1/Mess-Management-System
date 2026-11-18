@@ -1,6 +1,10 @@
+begin;
+select pg_advisory_xact_lock(1823402847);
 create table if not exists campus_student (
     id varchar(100) primary key
 );
+alter table campus_student add column if not exists enrolled_at timestamptz not null default '-infinity';
+alter table campus_student alter column enrolled_at set default now();
 create table if not exists campus_menu (
     id uuid primary key, day date not null, meal varchar(12) not null check (meal in ('BREAKFAST','LUNCH','DINNER')),
     dishes varchar(500) not null check (length(trim(dishes)) > 0), special boolean not null,
@@ -39,3 +43,5 @@ create table if not exists campus_reminder (
     check (next_at is null or (recipient is not null and due_day is not null))
 );
 create index if not exists campus_reminder_due on campus_reminder(next_at,bill_id) where next_at is not null;
+create index if not exists campus_menu_page on campus_menu(day desc,meal);
+commit;

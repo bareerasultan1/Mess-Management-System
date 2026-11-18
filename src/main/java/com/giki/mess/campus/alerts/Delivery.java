@@ -40,12 +40,12 @@ public class Delivery {
             } catch (RuntimeException failure) {
                 int count = c.attempts()+1;
                 String state = count >= 5 ? "DEAD" : "READY";
-                db.sql("update campus_event set attempts=?,state=?,available=? where id=?")
+                db.sql(Queries.MARK_FAILURE)
                     .params(count,state,Timestamp.from(clock.instant().plusSeconds(1L << (count-1))),c.event().id()).update();
                 LOG.warn("Delivery {} attempt {} state {}",c.event().id(),count,state);
                 return true;
             }
-            db.sql("update campus_event set cursor_id=?,state=?,attempts=0 where id=?")
+            db.sql(Queries.MARK_PROGRESS)
                 .param(cursor).param(cursor == null ? "DONE" : "READY").param(c.event().id()).update();
             return true;
         }));

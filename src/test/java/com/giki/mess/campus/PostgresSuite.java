@@ -50,7 +50,7 @@ abstract class PostgresSuite {
     }
     @BeforeEach void cleanPrivateSchema() {
         db.sql("truncate campus_inbox,campus_event,campus_rating,campus_menu,campus_case,campus_reminder,campus_student").update();
-        db.sql("insert into campus_student(id) values('student'),('student2')").update();
+        db.sql("insert into campus_student(id,enrolled_at) values('student','-infinity'),('student2','-infinity')").update();
         clock.time.set(START);
     }
 }

@@ -16,12 +16,12 @@ public class PostgresInbox implements AlertSubscriber {
     public String deliver(AlertEvent e, String after) {
         var now = Timestamp.from(clock.instant());
         if (e.recipient() != null) {
-            db.sql("insert into campus_inbox(event_id,recipient,delivered) values(?,?,?) on conflict do nothing")
+            db.sql(Queries.DELIVER_TARGET)
                 .params(e.id(), e.recipient(), now).update();
             return null;
         }
         // Keep cursor movement independent of how many inserts survived replay.
-        List<String> page = db.sql(Queries.DELIVER_PAGE).params(after == null ? "" : after, e.id(), now).query(String.class).list();
+        List<String> page = db.sql(Queries.DELIVER_PAGE).params(after == null ? "" : after, Timestamp.from(e.occurred()), e.id(), now).query(String.class).list();
         return page.size() == 128 ? page.getLast() : null;
     }
 }

@@ -51,7 +51,7 @@ class PostgresBehaviorTest extends PostgresSuite {
         assertThat(delivery.runOne()).isFalse();
     }
     @Test void twoWorkersFanoutAcrossPagesAndReplay() throws Exception {
-        db.sql("insert into campus_student(id) select 'batch-'||n from generate_series(1,260) n").update();
+        db.sql("insert into campus_student(id,enrolled_at) select 'batch-'||n,'-infinity' from generate_series(1,260) n").update();
         var id=menus.create(day,"LUNCH","Fruit",true);
         menus.publish(id,0);
         race(i->{while(delivery.runOne()) {} return i;});

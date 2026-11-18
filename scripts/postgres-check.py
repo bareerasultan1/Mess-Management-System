@@ -44,7 +44,7 @@ def run(statements):
     else:
         cmd = [exe,"-X","-tA","-v","ON_ERROR_STOP=1","-d",args.database]
     proc = subprocess.run(cmd,input="\n\n".join(s.strip().rstrip(";")+";" for s in statements)+"\n\n",
-                          capture_output=True,text=True,timeout=120)
+                          capture_output=True,text=True,timeout=120,check=False)
     output = proc.stdout + proc.stderr
     if proc.returncode or re.search(r"\b(ERROR|FATAL|PANIC):",output):
         raise RuntimeError(output[-9000:])
@@ -71,9 +71,10 @@ try:
     # The first connection/backend has exited. Recover the outstanding event in the second.
     block = [path,expect("exists(select from campus_menu where published and version=1)","published after restart"),
              expect(f"exists(select from campus_event where id='{event}' and state='READY')","event after restart"),
-             "begin",sql("claim_event",now),sql("deliver_page","",event,now),
+             "begin",sql("claim_event",now),sql("deliver_page","",now,event,now),
              f"update campus_event set state='DONE' where id='{event}'","commit",insert_event(event),
-             sql("deliver_page","",event,now),
+             "insert into campus_student(id,enrolled_at) values('new-student','2099-01-01')",
+             sql("deliver_page","",now,event,now),
              expect("(select count(*)=2 from campus_inbox) and (select count(*)=1 from campus_inbox where recipient='student')","dedup"),
              sql("edit_menu","Stale edit",False,menu,0),
              expect("(select dishes='Daal' and version=1 from campus_menu)","stale edit"),
@@ -84,7 +85,8 @@ try:
     block.append(f"""insert into campus_case(ref,kind,body,status,created) values
         ('{complaint}','COMPLAINT','fixture A','OPEN','{now}'),
         ('{closed}','COMPLAINT','fixture B','RESOLVED','{now}'),
-        ('{feedback}','FEEDBACK','fixture C','OPEN','{now}')""")
+        ('{feedback}','FEEDBACK','fixture C','OPEN','{now}'),
+        (gen_random_uuid(),'COMPLAINT','fixture D','CLOSED','{now}')""")
     block += [sql("escalate_cases","2026-11-17 23:59:59.999999+00",now),
               expect("not exists(select from campus_case where escalated is not null)","before threshold"),
               sql("escalate_cases",now,"2026-11-20 00:00+00"),sql("escalate_cases",now,"2026-11-21 00:00+00"),
@@ -96,7 +98,20 @@ try:
     run(block)
     print("PASS recovered committed event in a fresh backend; replay: one inbox row per student")
     print("PASS stale update, rating 0/1/5/6, threshold before/at, repeat escalation, resolution and exclusions")
-    bench=run([path,"create temp table timings(ms double precision)",f"""do $$
+    retry_id=str(uuid.uuid4())
+    failed_insert=sql("deliver_target",retry_id,"late-fixture",now)
+    retry_time="2026-11-18 00:00:01+00"
+    run([path,sql("insert_event",retry_id,now,"BILL","late-fixture","Bill available",now),
+         "begin",sql("claim_event",now),
+         "do $$ begin "+failed_insert+"; raise exception 'FK failure expected'; exception when foreign_key_violation then null; end $$",
+         sql("mark_failure",1,"READY",retry_time,retry_id),"commit",
+         expect(f"(select attempts=1 and available>'{now}' from campus_event where id='{retry_id}')","retry delayed"),
+         expect(f"not exists(select from campus_inbox where event_id='{retry_id}')","failure left no delivery"),
+         "insert into campus_student(id) values('late-fixture')","begin",sql("claim_event",retry_time),
+         sql("deliver_target",retry_id,"late-fixture",retry_time),sql("mark_progress",None,"DONE",retry_id),"commit",
+         expect(f"(select count(*)=1 from campus_inbox where event_id='{retry_id}')","retry delivery")])
+    print("PASS forced recipient FK failure, rolled-back delivery, delayed retry, successful durable recovery")
+    bench=run([path,"create temp table timings(ms double precision)","""do $$
 declare start_time timestamptz; i integer; found_id uuid;
 begin for i in 1..2000 loop start_time=clock_timestamp();
  select e.id into strict found_id from campus_inbox i join campus_event e on e.id=i.event_id
@@ -106,6 +121,6 @@ begin for i in 1..2000 loop start_time=clock_timestamp();
         """select 'MEASURE ops='||count(*)||' db_ops_per_s='||round((count(*)*1000/sum(ms))::numeric,1)||
         ' p95_ms='||round(percentile_cont(0.95) within group(order by ms)::numeric,3)||' errors=0 END' from timings"""])
     print(re.search(r'MEASURE ops=\d+ [^"\r\n]+? END',bench).group())
-    print("Workload: 1 backend, 2 seeded inbox rows, 2,000 indexed hot reads in one PL/pgSQL loop; SQL-only timings.")
+    print("Workload: 1 backend, 3 inbox rows (1 for measured student), 2,000 indexed hot reads in one PL/pgSQL loop; SQL-only timings.")
 finally:
     if creation: run([f"drop schema {schema} cascade"])

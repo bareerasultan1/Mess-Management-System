@@ -14,6 +14,9 @@ public final class Queries {
     public static final String ESCALATE_CASES=read("escalate_cases");
     public static final String MOVE_CASE=read("move_case");
     public static final String RATE_MEAL=read("rate_meal");
+    public static final String DELIVER_TARGET=read("deliver_target");
+    public static final String MARK_FAILURE=read("mark_failure");
+    public static final String MARK_PROGRESS=read("mark_progress");
     private static String read(String name) {
         try (var stream=Queries.class.getResourceAsStream("/sql/"+name+".sql")) {
             if (stream==null) throw new IllegalStateException("Missing SQL resource "+name);
