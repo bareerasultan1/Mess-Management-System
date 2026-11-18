@@ -32,6 +32,11 @@ public final class DomainChecks {
         check(!Rules.transition("OPEN","RESOLVED"));
         check(Rules.meal("LUNCH").equals("LUNCH"));
         rejects(() -> Rules.meal("SNACK"));
+        rejects(() -> Rules.text("private\0fixture",2000));
+        check(Rules.offset(0)==0);
+        check(Rules.offset(10000)==200000);
+        rejects(() -> Rules.offset(-1));
+        rejects(() -> Rules.offset(10001));
         var zone = ZoneId.of("Asia/Karachi");
         var due = LocalDate.of(2026,11,18);
         var midnight = due.atStartOfDay(zone).toInstant();

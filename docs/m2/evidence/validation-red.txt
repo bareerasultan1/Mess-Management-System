@@ -1,0 +1,3 @@
+Exception in thread "main" java.lang.AssertionError: Expected validation failure
+	at com.giki.mess.campus.DomainChecks.rejects(DomainChecks.java:18)
+	at com.giki.mess.campus.DomainChecks.main(DomainChecks.java:35)
