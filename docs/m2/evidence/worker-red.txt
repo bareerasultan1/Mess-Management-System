@@ -1,0 +1,9 @@
+src\test\java\com\giki\mess\campus\WorkerChecks.java:3: error: package com.giki.mess.campus.alerts does not exist
+import com.giki.mess.campus.alerts.DeliveryPool;
+                                  ^
+src\test\java\com\giki\mess\campus\WorkerChecks.java:17: error: cannot find symbol
+        try(var workers=new DeliveryPool()) {
+                            ^
+  symbol:   class DeliveryPool
+  location: class WorkerChecks
+2 errors
