@@ -108,6 +108,7 @@ public class BillingServiceImpl implements BillingService {
         // this bill is applied, so recalculating never counts a rebate or fine twice.
         Money previousAdjustment = existing.map(BillingServiceImpl::adjustmentOf).orElse(Money.ZERO);
         ledger.adjustBalance(adjustmentOf(bill).minus(previousAdjustment));
+        ledger.suspendIfOverdue();            // business rule: owing more than 10,000 PKR blocks mess access
         ledgers.save(ledger);
         return bills.save(bill);
     }
@@ -135,6 +136,7 @@ public class BillingServiceImpl implements BillingService {
             LOG.info("Replayed scan event ignored: event={}", eventId);
             return;
         }
+        boolean debited = false;
         try {
             StudentLedger ledger = ledgers.findByStudentId(studentId)
                 .orElseThrow(() -> new LedgerNotFoundException(studentId));
@@ -143,9 +145,14 @@ public class BillingServiceImpl implements BillingService {
                 throw new InvalidTariffException("No tariff strategy for category " + ledger.getCategory());
             }
             ledger.debitAmount(strategy.rateFor(mealType));
+            debited = true;
             ledgers.save(ledger);
         } catch (RuntimeException e) {
-            recordedScanEvents.remove(eventId);   // nothing was billed, so allow a retry
+            if (!debited) {
+                recordedScanEvents.remove(eventId);   // nothing was billed, so allow a retry
+            }
+            // If the debit already happened the event stays recorded: a retry must not bill the
+            // meal twice, and the next successful save of this ledger stores the debit.
             throw e;
         }
     }

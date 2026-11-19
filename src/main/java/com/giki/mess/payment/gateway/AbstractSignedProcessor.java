@@ -55,13 +55,18 @@ public abstract class AbstractSignedProcessor implements IPaymentProcessor {
     /** Computes the signature the real gateway would attach (also used by tests as the gateway). */
     public String sign(String transactionId, String studentId, String billId, Money amount,
                        CallbackStatus status, String gatewayReference, Instant issuedAt) {
-        String payload = String.join("|", transactionId, studentId, billId,
+        // Every field is written as "<length>:<value>", so where one field ends and the next
+        // begins is part of the signed data and text cannot be shifted between fields.
+        StringBuilder payload = new StringBuilder();
+        for (String field : new String[] {transactionId, studentId, billId,
             Long.toString(amount.paisa()), status.name(), gatewayReference,
-            Long.toString(issuedAt.toEpochMilli()));
+            Long.toString(issuedAt.toEpochMilli())}) {
+            payload.append(field.length()).append(':').append(field).append(';');
+        }
         try {
             Mac mac = Mac.getInstance(HMAC);
             mac.init(new SecretKeySpec(secret, HMAC));
-            return HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of().formatHex(mac.doFinal(payload.toString().getBytes(StandardCharsets.UTF_8)));
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("HMAC-SHA256 is not available", e);
         }

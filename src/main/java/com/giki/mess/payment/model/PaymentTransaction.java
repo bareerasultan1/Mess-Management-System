@@ -117,26 +117,39 @@ public class PaymentTransaction {
     // ── Controlled status transitions ─────────────────────────────────────────
 
     /** Called when the gateway confirms payment was successful. */
-    public void markSuccess() {
-        this.status = TransactionStatus.SUCCESS;
+    public synchronized void markSuccess() {
+        moveTo(TransactionStatus.SUCCESS, TransactionStatus.INITIATED);
     }
 
     /** Called when the gateway reports failure (rejected, expired, etc.) */
-    public void markFailed() {
-        this.status = TransactionStatus.FAILED;
+    public synchronized void markFailed() {
+        moveTo(TransactionStatus.FAILED, TransactionStatus.INITIATED);
     }
 
     /**
      * Called after ledger and bill have been updated.
      * This is the final settled state.
      */
-    public void markReconciled() {
-        this.status = TransactionStatus.RECONCILED;
+    public synchronized void markReconciled() {
+        moveTo(TransactionStatus.RECONCILED, TransactionStatus.SUCCESS);
     }
 
     /** Called by IdempotencyManager when a duplicate callback is detected. */
-    public void markDuplicate() {
-        this.status = TransactionStatus.DUPLICATE;
+    public synchronized void markDuplicate() {
+        moveTo(TransactionStatus.DUPLICATE, TransactionStatus.INITIATED);
+    }
+
+    /**
+     * The only way the status changes. Legal moves: INITIATED to SUCCESS, FAILED or DUPLICATE,
+     * and SUCCESS to RECONCILED. Every other state is final, so a settled payment can never be
+     * silently turned into a failed one (or the other way round).
+     */
+    private void moveTo(TransactionStatus target, TransactionStatus requiredCurrent) {
+        if (status != requiredCurrent) {
+            throw new IllegalStateException("Transaction " + transactionId + " is " + status
+                + " and cannot become " + target);
+        }
+        this.status = target;
     }
 
     // ── Getters ──────────────────────────────────────────────────────────────
@@ -148,7 +161,7 @@ public class PaymentTransaction {
     public PaymentChannel getChannel()   { return channel;        }
     public String getIdempotencyKey()    { return idempotencyKey; }
     public LocalDateTime getCreatedAt()  { return createdAt;      }
-    public TransactionStatus getStatus() { return status;         }
+    public synchronized TransactionStatus getStatus() { return status; }
 
     @Override
     public String toString() {
