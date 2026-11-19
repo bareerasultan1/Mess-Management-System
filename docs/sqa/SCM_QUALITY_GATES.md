@@ -2,7 +2,7 @@
 
 SE431 Milestone 2. Owner: Mahvash Imran (2023294). Repository:
 https://github.com/bareerasultan1/Mess-Management-System (branch `Billing&PaymentSystem`).
-All figures below were taken from the repository at commit `6b2a6fc` (2026-11-19).
+All figures below were taken from the repository at commit `0d2b506` (2026-11-19).
 
 ## 1. Strategy promised in Milestone 1
 
@@ -40,7 +40,10 @@ The complete list of red and green commits is in the appendix. Each `[RED]` comm
 failed when it was committed (verified by running the tests before committing); the matching
 `[GREEN]` commit makes it pass.
 
-Individual attribution: commits are authored under the member's own name and e-mail. Commit messages do
+Individual attribution: commits are authored under the member's own name and e-mail. (One small
+commit made in the GitHub web editor, "Delete manual setup guide", appears under the account name
+`MahvashImran` instead of `Mahvash Imran`; it is the same member. Commits made through the web
+editor use the GitHub profile name, so make changes from the local clone to keep one identity.) Commit messages do
 not carry tool co-author lines; use of AI assistance is disclosed in `docs/AI_USAGE_LOG_M2.md`, as the
 guidelines require.
 
@@ -113,9 +116,9 @@ f1b5779 test(validation): [RED] boundary validator and API structured-error beha
 d263a4e feat(validation): [GREEN] boundary validator, structured API errors, masked audit logging
 ee966ae test(persistence): [RED] contract and end-to-end tests against PostgreSQL
 515be76 refactor(persistence): [GREEN] replace the previous database with PostgreSQL
-75916ad test(sqa): [RED] regression tests for inspection defects DEF-01 to DEF-04
-c2f5b83 fix(sqa): [GREEN] resolve inspection defects DEF-01 to DEF-04
-ab6aff2 refactor(billing): [REFACTOR] split BillingServiceImpl methods (complexity <= 10)
-c2a483b refactor(quality): [REFACTOR] resolve Checkstyle and SpotBugs findings
-b1191b7 refactor(payment): [REFACTOR] extract requireMatchesOriginalRequest from settlePayment
+17edbe3 test(sqa): [RED] regression tests for inspection defects DEF-01 to DEF-04
+6848750 fix(sqa): [GREEN] resolve inspection defects DEF-01 to DEF-04
+d8ad307 refactor(billing): [REFACTOR] split BillingServiceImpl methods (complexity <= 10)
+e38093b refactor(quality): [REFACTOR] resolve Checkstyle and SpotBugs findings
+afe6725 refactor(payment): [REFACTOR] extract requireMatchesOriginalRequest from settlePayment
 ```

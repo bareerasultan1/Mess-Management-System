@@ -92,7 +92,7 @@ N = 17 plus one virtual exit = 18. E = 23 (17 drawn plus six exits). P = 6 (node
 * V(G) = E - N + 2 = 23 - 18 + 2 = **7**
 * V(G) = P + 1 = 6 + 1 = **7**
 * Checkstyle `CyclomaticComplexity`: **7** (was 10 before the request comparison was extracted into
-  its own method, commit `b1191b7`)
+  its own method, commit `afe6725`)
 
 Exceptions raised inside called methods (unknown transaction, request mismatch, invalid signature) are
 not edges of this method's graph; they are covered by `PaymentServiceTest` and `PaymentProcessorsTest`.

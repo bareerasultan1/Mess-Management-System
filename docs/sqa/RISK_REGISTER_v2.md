@@ -3,7 +3,7 @@
 SE431. Risks owned by Mahvash Imran (2023294). Method as in the Milestone 1 report: probability P and
 impact I on a 1 to 5 scale, priority = P x I (1-4 Low, 5-9 Medium, 10-25 High). A planned mitigation does
 not reduce exposure; a residual rating is given only where the mitigation is evidenced.
-Evidence base: commit `6b2a6fc`, 322 tests, inspection preparation, static analysis, SCM review.
+Evidence base: commit `0d2b506`, 322 tests, inspection preparation, static analysis, SCM review.
 Entries owned by Bareera and Zouhair (R-01, R-04, R-05, R-06, R-07) are for them to update.
 
 ## 1. Updated risks

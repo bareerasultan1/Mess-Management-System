@@ -19,8 +19,8 @@ SE431 Milestone 2. Author of the inspected code: Mahvash Imran (2023294).
 | `payment/gateway/AbstractSignedProcessor.java` | 123 | callback signature checking (security) |
 | `payment/model/PaymentTransaction.java` | 160 | payment state |
 
-Total 986 lines (line counts at commit `6b2a6fc`). The author's preparation review was done on the
-code of commit `99fa5fe`, before fixes DEF-01 to DEF-04; the inspectors should read commit `6b2a6fc`
+Total 986 lines (line counts at commit `0d2b506`). The author's preparation review was done on the
+code of commit `99fa5fe`, before fixes DEF-01 to DEF-04; the inspectors should read commit `0d2b506`
 or later.
 
 ## 2. Process (Fagan stages) and status
@@ -77,10 +77,10 @@ corrupted state in a realistic scenario. **Minor** limited impact or hardening. 
 
 | ID | Artifact and place | Defect | Severity | Disposition | CAPA and evidence |
 | --- | --- | --- | --- | --- | --- |
-| DEF-01 | `BillingServiceImpl.recordMealSwipe` | If the ledger debit succeeded but saving it failed, the scan id was forgotten, so a retry billed the same meal twice | Major | **Fixed** | the id is kept once the debit happened. Test `def01_retryAfterSaveFailure_doesNotDoubleBill`. RED `75916ad`, fix `c2f5b83` |
-| DEF-02 | `PaymentTransaction.markXxx` | any status could be set from any status (for example RECONCILED without SUCCESS, or FAILED turned into SUCCESS) | Major | **Fixed** | legal transitions only (INITIATED to SUCCESS, FAILED or DUPLICATE; SUCCESS to RECONCILED), otherwise `IllegalStateException`. `PaymentTransactionStateMachineTest`. `c2f5b83` |
-| DEF-03 | `AbstractSignedProcessor.sign` | the signed text joined fields with `\|`, so text could be moved between neighbouring fields without changing the signature | Minor (security hardening) | **Fixed** | each field is length-prefixed. `SignatureEncodingTest`. `c2f5b83` |
-| DEF-04 | `StudentLedger.suspendIfOverdue` | the business rule "owing more than 10,000 PKR suspends the account" existed but nothing called it | Minor | **Fixed** | called when a bill is generated. `def04_*` tests. `c2f5b83` |
+| DEF-01 | `BillingServiceImpl.recordMealSwipe` | If the ledger debit succeeded but saving it failed, the scan id was forgotten, so a retry billed the same meal twice | Major | **Fixed** | the id is kept once the debit happened. Test `def01_retryAfterSaveFailure_doesNotDoubleBill`. RED `17edbe3`, fix `6848750` |
+| DEF-02 | `PaymentTransaction.markXxx` | any status could be set from any status (for example RECONCILED without SUCCESS, or FAILED turned into SUCCESS) | Major | **Fixed** | legal transitions only (INITIATED to SUCCESS, FAILED or DUPLICATE; SUCCESS to RECONCILED), otherwise `IllegalStateException`. `PaymentTransactionStateMachineTest`. `6848750` |
+| DEF-03 | `AbstractSignedProcessor.sign` | the signed text joined fields with `\|`, so text could be moved between neighbouring fields without changing the signature | Minor (security hardening) | **Fixed** | each field is length-prefixed. `SignatureEncodingTest`. `6848750` |
+| DEF-04 | `StudentLedger.suspendIfOverdue` | the business rule "owing more than 10,000 PKR suspends the account" existed but nothing called it | Minor | **Fixed** | called when a bill is generated. `def04_*` tests. `6848750` |
 | DEF-05 | `PaymentServiceImpl.settlePayment` | ledger save, bill save and transaction save are three separate writes; a failure between them leaves the ledger credited but the bill or transaction unchanged, and the claimed key blocks a retry | Major | **Deferred** to Milestone 3 | needs one database transaction across the three records (unit of work). Owner Mahvash. Risk R-09. Mitigation now: the in-memory repositories and the happy path are tested; the failure window is small |
 | DEF-06 | `settlePayment`, status check | a SUCCESS callback that arrives after a FAILED one for the same payment is treated as a duplicate and ignored | Minor | **Deferred / accepted** | real gateways send one final outcome per payment; revisit when real provider semantics are known (M3). Owner Mahvash |
 | DEF-07 | `calculateMonthlyBill` against `settlePayment` | the bill status is read, a new bill is built and saved; a payment applied in between would be overwritten by the new UNPAID bill | Major | **Deferred** to Milestone 3 | needs an optimistic version column or a per-bill lock. Owner Mahvash. Risk R-10. Mitigation now: bills with a payment are never recalculated; the race window is the length of one calculation |

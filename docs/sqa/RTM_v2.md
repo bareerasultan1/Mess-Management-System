@@ -5,7 +5,7 @@ Milestone 1 SQA report. RTM v1 listed every requirement as "Planned"; this versi
 Milestone 2 build really implements and how each item was verified.
 Scope: Billing (FR-002), Online Payment (FR-003) and the shared requirements as far as they concern
 these modules. Attendance, menu, notification and feedback rows belong to the teammates and are not
-repeated here. Build: commit `6b2a6fc`, 322 tests, 0 failures, 93.4% line coverage.
+repeated here. Build: commit `0d2b506`, 322 tests, 0 failures, 93.4% line coverage.
 
 Status words: **Verified** = implemented and checked by tests and by review. **Partly verified** = a
 defined part is verified, the rest is stated. **Planned** = scheduled for Milestone 3.

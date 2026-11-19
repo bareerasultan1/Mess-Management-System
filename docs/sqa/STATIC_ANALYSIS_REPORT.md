@@ -2,7 +2,7 @@
 
 SE431 Milestone 2. Owner: Mahvash Imran (2023294). Code analysed: the whole production source of the
 Billing and Online Payment modules, `src/main/java` (about 3,800 non-blank lines, 77 classes).
-Snapshot: commit `6b2a6fc`, 2026-11-19.
+Snapshot: commit `0d2b506`, 2026-11-19.
 
 ## 1. Tools and configuration
 

@@ -4,7 +4,7 @@ Project: Digital Mess Management System, GIKI. Team: Bareera Sultan (2023158), M
 (2023294), Zouhair Azam Khan (2023785). Supervisor: Dr. Mian Muaz Razaq.
 This report covers the modules owned by Mahvash Imran. Repository:
 https://github.com/bareerasultan1/Mess-Management-System, branch `Billing&PaymentSystem`.
-Evidence snapshot: commit `6b2a6fc`, 2026-11-19.
+Evidence snapshot: commit `0d2b506`, 2026-11-19.
 
 The quality activities below were applied to the same build that Construction (SE423) produced in this
 milestone cycle, as the guidelines require.
