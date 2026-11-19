@@ -43,7 +43,7 @@ milestone cycle, as the guidelines require.
    Nothing in that section is pre-filled on purpose.
 2. **Create `develop`, open the pull request, get a review and tag `v0.2.0-m2-billing`**; protect the
    branches on GitHub (steps in `SCM_QUALITY_GATES.md`). Confirm the first GitHub Actions run is green.
-3. **Run the demo once on the real PostgreSQL** (`docs/MANUAL_SETUP_GUIDE.md`) and look at the tables in
+3. **Run the demo once on the real PostgreSQL** (README, section "Run against PostgreSQL") and look at the tables in
    pgAdmin (activity VAL-04).
 4. **Every member submits the confidential peer evaluation**, including a self-evaluation (guidelines section 7).
 5. **Review the AI usage log** (`docs/AI_USAGE_LOG_M2.md`) and be ready to explain each item; the guidelines
