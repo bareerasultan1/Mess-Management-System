@@ -39,7 +39,8 @@ import org.slf4j.LoggerFactory;
 public class PaymentServiceImpl implements PaymentService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PaymentServiceImpl.class);
-    private static final Duration SETTLEMENT_SLA = Duration.ofSeconds(5);
+    /** Target from requirement QA-02: a successful payment is recorded within 5 seconds. */
+    public static final Duration DEFAULT_SETTLEMENT_SLA = Duration.ofSeconds(5);
 
     private final PaymentProcessorFactory factory;
     private final IPaymentRepository payments;
@@ -47,6 +48,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final ILedgerRepository ledgers;
 
     private final IdempotencyManager idempotency;
+    private final Duration settlementSla;
 
     /**
      * Creates the service with its own idempotency gate.
@@ -62,11 +64,21 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentServiceImpl(PaymentProcessorFactory factory, IPaymentRepository payments,
                               IBillRepository bills, ILedgerRepository ledgers,
                               IdempotencyManager idempotency) {
+        this(factory, payments, bills, ledgers, idempotency, DEFAULT_SETTLEMENT_SLA);
+    }
+
+    /**
+     * Creates the service with an explicit settlement time target; a slower settlement is logged.
+     */
+    public PaymentServiceImpl(PaymentProcessorFactory factory, IPaymentRepository payments,
+                              IBillRepository bills, ILedgerRepository ledgers,
+                              IdempotencyManager idempotency, Duration settlementSla) {
         this.factory = factory;
         this.payments = payments;
         this.bills = bills;
         this.ledgers = ledgers;
         this.idempotency = idempotency;
+        this.settlementSla = settlementSla;
     }
 
     @Override
@@ -186,9 +198,9 @@ public class PaymentServiceImpl implements PaymentService {
         payments.save(tx);
 
         Duration took = Duration.ofNanos(System.nanoTime() - startedAt);
-        if (took.compareTo(SETTLEMENT_SLA) > 0) {
-            LOG.warn("Settlement exceeded the 5 s target: tx={} took={}ms",
-                tx.getTransactionId(), took.toMillis());
+        if (took.compareTo(settlementSla) > 0) {
+            LOG.warn("Settlement exceeded the {} ms target: tx={} took={}ms",
+                settlementSla.toMillis(), tx.getTransactionId(), took.toMillis());
         }
         LOG.info("Payment settled: tx={} student={} amount={}", tx.getTransactionId(),
             LogRedactor.maskStudentId(tx.getStudentId()), tx.getAmount());
