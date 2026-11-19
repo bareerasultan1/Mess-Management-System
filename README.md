@@ -58,7 +58,9 @@ Factory Method (`PaymentProcessorFactory`), Observer (`AttendanceSubject` / `Bil
 Strategy (`BillingCalculationStrategy`).
 
 ### Documents (`docs/`)
-`THREAD_SAFETY_STRATEGY.md`, `PERSISTENCE_AND_BOUNDARIES.md`, `AI_USAGE_LOG_M2.md`.
+`THREAD_SAFETY_STRATEGY.md`, `PERSISTENCE_AND_BOUNDARIES.md`, `MANUAL_SETUP_GUIDE.md`, `AI_USAGE_LOG_M2.md`.
+Quality assurance (SE431): `docs/sqa/SQA_M2_REPORT.md` is the index (inspection, static analysis, V&V plan,
+black-box and white-box test design, SCM gates, RTM v2, risk register).
 
 ### Notes
 Payment gateways are **simulated sandboxes** (HMAC-signed callbacks); no live bank connection is used.
