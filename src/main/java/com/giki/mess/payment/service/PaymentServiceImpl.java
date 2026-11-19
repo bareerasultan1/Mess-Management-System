@@ -123,6 +123,15 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
+    /** The callback must describe exactly the payment that was started (student, bill and amount). */
+    private static void requireMatchesOriginalRequest(PaymentTransaction tx, PaymentCallback callback) {
+        if (!tx.getStudentId().equals(callback.studentId())
+                || !tx.getBillId().equals(callback.billId())
+                || !tx.getAmount().equals(callback.amount())) {
+            throw new InvalidCallbackException("Callback does not match the original payment request");
+        }
+    }
+
     // The timer must start at method entry, so its declaration is intentionally far from its use.
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     @Override
@@ -133,11 +142,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
         PaymentTransaction tx = payments.findById(callback.transactionId())
             .orElseThrow(() -> new InvalidCallbackException("Unknown transaction"));
-        if (!tx.getStudentId().equals(callback.studentId())
-                || !tx.getBillId().equals(callback.billId())
-                || !tx.getAmount().equals(callback.amount())) {
-            throw new InvalidCallbackException("Callback does not match the original payment request");
-        }
+        requireMatchesOriginalRequest(tx, callback);
         factory.getProcessor(tx.getChannel()).reconcile(callback); // signature + freshness
 
         // Atomic gate: of all concurrent copies of this callback exactly one gets past here.
