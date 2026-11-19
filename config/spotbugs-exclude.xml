@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SpotBugs exclusions. Each exclusion must be a JUSTIFIED false positive recorded in
+     docs/sqa/STATIC_ANALYSIS_REPORT.md. Empty until the findings have been triaged. -->
+<FindBugsFilter>
+</FindBugsFilter>
