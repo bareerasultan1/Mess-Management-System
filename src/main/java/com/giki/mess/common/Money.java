@@ -3,16 +3,16 @@ package com.giki.mess.common;
 /**
  * VALUE OBJECT: Money
  *
- * An immutable amount of PKR stored as a whole number of paisa (1 PKR = 100 paisa).
+ * <p>An immutable amount of PKR stored as a whole number of paisa (1 PKR = 100 paisa).
  *
- * WHY NOT double?
+ * <p>WHY NOT double?
  * ───────────────
  * Computers store double in binary, so 0.1 + 0.2 = 0.30000000000000004.
  * For a billing system that is a real bug (a bill off by a paisa fails reconciliation).
  * Integers are exact, and a long can be added atomically, so Money also keeps
  * the concurrency work on StudentLedger simple.
  *
- * Rounding rule (one place only): percentages are rounded HALF_UP to the nearest paisa.
+ * <p>Rounding rule (one place only): percentages are rounded HALF_UP to the nearest paisa.
  */
 public record Money(long paisa) implements Comparable<Money> {
 

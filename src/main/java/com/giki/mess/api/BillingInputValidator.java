@@ -23,6 +23,7 @@ public class BillingInputValidator {
     private static final BigDecimal MAX_AMOUNT =
         BigDecimal.valueOf(PaymentTransaction.MAX_AMOUNT.paisa(), 2);
 
+    /** Returns the trimmed student id, or throws if it is not 7 digits starting with 20. */
     public String studentId(String raw) {
         String id = raw == null ? "" : raw.trim();
         if (!STUDENT_ID.matcher(id).matches()) {
@@ -50,6 +51,7 @@ public class BillingInputValidator {
         return Money.ofPaisa(raw.setScale(2, RoundingMode.UNNECESSARY).movePointRight(2).longValueExact());
     }
 
+    /** Returns the month if it is between 1 and 12. */
     public int month(int raw) {
         if (raw < 1 || raw > 12) {
             throw new InvalidInputException("month", "Month must be between 1 and 12.");
@@ -57,6 +59,7 @@ public class BillingInputValidator {
         return raw;
     }
 
+    /** Returns the year if it is between 2020 and 2100. */
     public int year(int raw) {
         if (raw < 2020 || raw > 2100) {
             throw new InvalidInputException("year", "Year must be between 2020 and 2100.");
@@ -64,6 +67,7 @@ public class BillingInputValidator {
         return raw;
     }
 
+    /** Returns the bill number if it has the form BILL-studentId-year-month. */
     public String billId(String raw) {
         String id = raw == null ? "" : raw.trim();
         if (!BILL_ID.matcher(id).matches()) {
@@ -72,6 +76,7 @@ public class BillingInputValidator {
         return id;
     }
 
+    /** Returns the payment reference if it is 1-64 letters, digits, dots, dashes or underscores. */
     public String idempotencyKey(String raw) {
         String key = raw == null ? "" : raw.trim();
         if (!IDEMPOTENCY_KEY.matcher(key).matches()) {
@@ -81,6 +86,7 @@ public class BillingInputValidator {
         return key;
     }
 
+    /** Parses a payment method name (any letter case) into a channel. */
     public PaymentChannel channel(String raw) {
         String allowed = Arrays.toString(PaymentChannel.values());
         if (raw == null || raw.isBlank()) {
@@ -93,6 +99,7 @@ public class BillingInputValidator {
         }
     }
 
+    /** Returns the date if one was supplied. */
     public LocalDate asOfDate(LocalDate raw) {
         if (raw == null) {
             throw new InvalidInputException("asOfDate", "A date is required.");

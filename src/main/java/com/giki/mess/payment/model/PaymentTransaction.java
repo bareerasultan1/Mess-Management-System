@@ -1,15 +1,16 @@
 package com.giki.mess.payment.model;
 
+import com.giki.mess.common.Guard;
 import com.giki.mess.common.Money;
 import java.time.LocalDateTime;
 
 /**
  * DOMAIN ENTITY: PaymentTransaction
  *
- * Records ONE payment attempt by a student — analogous to a bank transaction record.
+ * <p>Records ONE payment attempt by a student — analogous to a bank transaction record.
  * Every payment attempt creates a new PaymentTransaction regardless of outcome.
  *
- * KEY FIELDS:
+ * <p>KEY FIELDS:
  * ───────────
  *  transactionId   → Unique ID (UUID) generated when student clicks "Pay"
  *  idempotencyKey  → A deduplification key we give to the gateway.
@@ -17,13 +18,13 @@ import java.time.LocalDateTime;
  *                    lets us detect and reject the duplicate.
  *                    (Solves Risk R-02, enables QA-CONC-01)
  *
- * IMMUTABILITY DECISION:
+ * <p>IMMUTABILITY DECISION:
  *   The transaction record itself (who paid, how much, when) is IMMUTABLE.
  *   Only the status can change (INITIATED → SUCCESS → RECONCILED).
  *   This is similar to how bank records work: the transaction amount never
  *   changes after it's recorded — you just add a new status entry.
  *
- * HOW IT CONNECTS TO THE SYSTEM:
+ * <p>HOW IT CONNECTS TO THE SYSTEM:
  *   Student clicks "Pay 3500 PKR via JazzCash"
  *     → PaymentService creates a PaymentTransaction (status = INITIATED)
  *     → JazzCash processes the payment
@@ -32,7 +33,7 @@ import java.time.LocalDateTime;
  *     → Updates status to SUCCESS / FAILED
  *     → If SUCCESS: updates StudentLedger + Bill, sets status to RECONCILED
  */
-public class PaymentTransaction {
+public final class PaymentTransaction {
 
     /** Maximum single online payment (decision: 50,000 PKR, used by validation and BVA tests). */
     public static final Money MAX_AMOUNT = Money.pkr(50_000);
@@ -68,29 +69,17 @@ public class PaymentTransaction {
                                Money amount, PaymentChannel channel, String idempotencyKey,
                                LocalDateTime createdAt, TransactionStatus status) {
         // Defensive validation
-        if (transactionId == null || transactionId.isBlank()) {
-            throw new IllegalArgumentException("transactionId cannot be null or blank");
-        }
-        if (studentId == null || studentId.isBlank()) {
-            throw new IllegalArgumentException("studentId cannot be null or blank");
-        }
-        if (billId == null || billId.isBlank()) {
-            throw new IllegalArgumentException("billId cannot be null or blank");
-        }
+        Guard.notBlank(transactionId, "transactionId cannot be null or blank");
+        Guard.notBlank(studentId, "studentId cannot be null or blank");
+        Guard.notBlank(billId, "billId cannot be null or blank");
         if (amount == null || !amount.isPositive()) {
             throw new IllegalArgumentException(
                 "Payment amount must be positive, got: " + amount);
         }
-        if (amount.isGreaterThan(MAX_AMOUNT)) {
-            throw new IllegalArgumentException(
-                "Payment amount exceeds maximum limit (" + MAX_AMOUNT + "): " + amount);
-        }
-        if (channel == null) {
-            throw new IllegalArgumentException("PaymentChannel cannot be null");
-        }
-        if (idempotencyKey == null || idempotencyKey.isBlank()) {
-            throw new IllegalArgumentException("idempotencyKey cannot be null or blank");
-        }
+        Guard.require(!amount.isGreaterThan(MAX_AMOUNT),
+            "Payment amount exceeds maximum limit (" + MAX_AMOUNT + "): " + amount);
+        Guard.notNull(channel, "PaymentChannel cannot be null");
+        Guard.notBlank(idempotencyKey, "idempotencyKey cannot be null or blank");
 
         this.transactionId   = transactionId;
         this.studentId       = studentId;
@@ -99,7 +88,8 @@ public class PaymentTransaction {
         this.channel         = channel;
         this.idempotencyKey  = idempotencyKey;
         if (createdAt == null || status == null) {
-            throw new IllegalArgumentException("createdAt and status cannot be null");
+            throw new IllegalArgumentException(
+                "createdAt and status cannot be null");
         }
         this.createdAt       = createdAt;
         this.status          = status;
@@ -154,14 +144,37 @@ public class PaymentTransaction {
 
     // ── Getters ──────────────────────────────────────────────────────────────
 
-    public String getTransactionId()     { return transactionId;  }
-    public String getStudentId()         { return studentId;      }
-    public String getBillId()            { return billId;         }
-    public Money getAmount()             { return amount;         }
-    public PaymentChannel getChannel()   { return channel;        }
-    public String getIdempotencyKey()    { return idempotencyKey; }
-    public LocalDateTime getCreatedAt()  { return createdAt;      }
-    public synchronized TransactionStatus getStatus() { return status; }
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public String getBillId() {
+        return billId;
+    }
+
+    public Money getAmount() {
+        return amount;
+    }
+
+    public PaymentChannel getChannel() {
+        return channel;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public synchronized TransactionStatus getStatus() {
+        return status;
+    }
 
     @Override
     public String toString() {

@@ -17,11 +17,12 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.postgresql.util.PSQLException;
+import org.postgresql.util.ServerErrorMessage;
 
 /**
  * PostgreSQL storage of payment transactions.
  *
- * DURABLE IDEMPOTENCY: the idempotency_key column has a UNIQUE constraint
+ * <p>DURABLE IDEMPOTENCY: the idempotency_key column has a UNIQUE constraint
  * (uq_payment_idempotency). Even if the in-memory IdempotencyManager is empty after a restart,
  * the database refuses a second transaction with the same key, which this class reports as a
  * DuplicateTransactionException.
@@ -78,10 +79,11 @@ public class PostgresPaymentRepository implements IPaymentRepository {
     }
 
     private static boolean isIdempotencyViolation(SQLException e) {
-        return e instanceof PSQLException p
-            && UNIQUE_VIOLATION.equals(p.getSQLState())
-            && p.getServerErrorMessage() != null
-            && IDEMPOTENCY_CONSTRAINT.equals(p.getServerErrorMessage().getConstraint());
+        if (!(e instanceof PSQLException p) || !UNIQUE_VIOLATION.equals(p.getSQLState())) {
+            return false;
+        }
+        ServerErrorMessage detail = p.getServerErrorMessage();
+        return detail != null && IDEMPOTENCY_CONSTRAINT.equals(detail.getConstraint());
     }
 
     @Override
@@ -102,7 +104,8 @@ public class PostgresPaymentRepository implements IPaymentRepository {
 
     @Override
     public List<PaymentTransaction> findByBillId(String billId) {
-        return query("SELECT * FROM payment_transactions WHERE bill_id = ? ORDER BY created_at, transaction_id", billId);
+        return query("SELECT * FROM payment_transactions WHERE bill_id = ? "
+            + "ORDER BY created_at, transaction_id", billId);
     }
 
     @Override
@@ -146,7 +149,8 @@ public class PostgresPaymentRepository implements IPaymentRepository {
         synchronized (lock) {
             try {
                 db.inTransaction(c -> {
-                    try (PreparedStatement ps = c.prepareStatement("DELETE FROM payment_transactions WHERE transaction_id = ?")) {
+                    try (PreparedStatement ps = c.prepareStatement(
+                            "DELETE FROM payment_transactions WHERE transaction_id = ?")) {
                         ps.setString(1, transactionId);
                         ps.executeUpdate();
                     }

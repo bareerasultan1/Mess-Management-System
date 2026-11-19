@@ -1,5 +1,6 @@
 package com.giki.mess.billing.config;
 
+import com.giki.mess.billing.exception.InvalidTariffException;
 import com.giki.mess.billing.model.MealType;
 import com.giki.mess.common.Money;
 import java.util.EnumMap;
@@ -19,36 +20,26 @@ public final class TariffConfiguration {
     private final int lateFinePercent;
     private final Money administrativeCharge;
 
+    /**
+     * Creates a tariff, rejecting missing rates or impossible rule values.
+     */
     public TariffConfiguration(Map<MealType, Money> mealRates, int dueDayOfNextMonth,
                                int absenceThresholdDays, int rebatePercent, int maxRebateDays,
                                int lateFinePercent, Money administrativeCharge) {
         if (mealRates == null || mealRates.size() != MealType.values().length) {
-            throw new com.giki.mess.billing.exception.InvalidTariffException(
-                "A rate is required for every meal type");
+            throw new InvalidTariffException("A rate is required for every meal type");
         }
-        for (Money rate : mealRates.values()) {
-            if (rate == null || !rate.isPositive()) {
-                throw new com.giki.mess.billing.exception.InvalidTariffException(
-                    "Meal rates must be positive");
-            }
-        }
-        if (dueDayOfNextMonth < 1 || dueDayOfNextMonth > 28) {
-            throw new com.giki.mess.billing.exception.InvalidTariffException(
-                "Due day must be between 1 and 28, got: " + dueDayOfNextMonth);
-        }
-        if (absenceThresholdDays < 1 || maxRebateDays < 0
-                || rebatePercent < 0 || rebatePercent > 100) {
-            throw new com.giki.mess.billing.exception.InvalidTariffException(
-                "Invalid rebate rule: threshold>=1, 0<=percent<=100, maxDays>=0");
-        }
-        if (lateFinePercent < 0 || lateFinePercent > 100) {
-            throw new com.giki.mess.billing.exception.InvalidTariffException(
-                "Late fine percent must be 0-100, got: " + lateFinePercent);
-        }
-        if (administrativeCharge == null || !administrativeCharge.isPositive()) {
-            throw new com.giki.mess.billing.exception.InvalidTariffException(
-                "Administrative charge must be positive");
-        }
+        requireValid(mealRates.values().stream().allMatch(r -> r != null && r.isPositive()),
+            "Meal rates must be positive");
+        requireValid(dueDayOfNextMonth >= 1 && dueDayOfNextMonth <= 28,
+            "Due day must be between 1 and 28, got: " + dueDayOfNextMonth);
+        requireValid(absenceThresholdDays >= 1 && maxRebateDays >= 0
+                && rebatePercent >= 0 && rebatePercent <= 100,
+            "Invalid rebate rule: threshold>=1, 0<=percent<=100, maxDays>=0");
+        requireValid(lateFinePercent >= 0 && lateFinePercent <= 100,
+            "Late fine percent must be 0-100, got: " + lateFinePercent);
+        requireValid(administrativeCharge != null && administrativeCharge.isPositive(),
+            "Administrative charge must be positive");
         this.administrativeCharge = administrativeCharge;
         this.lateFinePercent = lateFinePercent;
         this.absenceThresholdDays = absenceThresholdDays;
@@ -56,6 +47,13 @@ public final class TariffConfiguration {
         this.maxRebateDays = maxRebateDays;
         this.mealRates = new EnumMap<>(mealRates);
         this.dueDayOfNextMonth = dueDayOfNextMonth;
+    }
+
+
+    private static void requireValid(boolean condition, String message) {
+        if (!condition) {
+            throw new InvalidTariffException(message);
+        }
     }
 
     /** GIKI mess defaults: breakfast 100, lunch 150, dinner 150 PKR; bills due on the 10th. */

@@ -48,11 +48,17 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final IdempotencyManager idempotency;
 
+    /**
+     * Creates the service with its own idempotency gate.
+     */
     public PaymentServiceImpl(PaymentProcessorFactory factory, IPaymentRepository payments,
                               IBillRepository bills, ILedgerRepository ledgers) {
         this(factory, payments, bills, ledgers, new IdempotencyManager());
     }
 
+    /**
+     * Creates the service with an explicit idempotency gate (shared by every instance in tests).
+     */
     public PaymentServiceImpl(PaymentProcessorFactory factory, IPaymentRepository payments,
                               IBillRepository bills, ILedgerRepository ledgers,
                               IdempotencyManager idempotency) {
@@ -66,26 +72,11 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentResponse initiatePayment(String studentId, String billId, Money amount,
                                            PaymentChannel channel, String idempotencyKey) {
-        if (studentId == null || studentId.isBlank() || billId == null || billId.isBlank()
-                || idempotencyKey == null || idempotencyKey.isBlank()) {
-            throw new IllegalArgumentException("studentId, billId and idempotencyKey are required");
-        }
-        if (amount == null || !amount.isPositive()) {
-            throw new IllegalArgumentException("Payment amount must be positive");
-        }
+        requireValidInitiation(studentId, billId, amount, idempotencyKey);
         IPaymentProcessor processor = factory.getProcessor(channel);
 
         Bill bill = bills.findById(billId).orElseThrow(() -> new BillNotFoundException(billId));
-        if (!bill.getStudentId().equals(studentId)) {
-            throw new PaymentException("BILL_OWNER_MISMATCH", "Bill does not belong to this student");
-        }
-        if (bill.getPaymentStatus() == PaymentStatus.PAID) {
-            throw new PaymentException("BILL_ALREADY_PAID", "Bill is already paid: " + billId);
-        }
-        if (amount.isGreaterThan(bill.getNetPayable())) {
-            throw new PaymentException("AMOUNT_EXCEEDS_DUE",
-                "Amount " + amount + " exceeds the outstanding " + bill.getNetPayable());
-        }
+        requirePayable(bill, studentId, amount);
         if (payments.findByIdempotencyKey(idempotencyKey).isPresent()) {
             throw new DuplicateTransactionException(idempotencyKey);
         }
@@ -107,6 +98,33 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
+    private static void requireValidInitiation(String studentId, String billId, Money amount,
+                                               String idempotencyKey) {
+        if (studentId == null || studentId.isBlank() || billId == null || billId.isBlank()
+                || idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new IllegalArgumentException("studentId, billId and idempotencyKey are required");
+        }
+        if (amount == null || !amount.isPositive()) {
+            throw new IllegalArgumentException("Payment amount must be positive");
+        }
+    }
+
+    /** The bill must belong to the student, not be paid already, and be owed at least this amount. */
+    private static void requirePayable(Bill bill, String studentId, Money amount) {
+        if (!bill.getStudentId().equals(studentId)) {
+            throw new PaymentException("BILL_OWNER_MISMATCH", "Bill does not belong to this student");
+        }
+        if (bill.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new PaymentException("BILL_ALREADY_PAID", "Bill is already paid: " + bill.getBillId());
+        }
+        if (amount.isGreaterThan(bill.getNetPayable())) {
+            throw new PaymentException("AMOUNT_EXCEEDS_DUE",
+                "Amount " + amount + " exceeds the outstanding " + bill.getNetPayable());
+        }
+    }
+
+    // The timer must start at method entry, so its declaration is intentionally far from its use.
+    @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     @Override
     public PaymentTransaction settlePayment(PaymentCallback callback) {
         long startedAt = System.nanoTime();

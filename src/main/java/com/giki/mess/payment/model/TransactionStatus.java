@@ -3,9 +3,9 @@ package com.giki.mess.payment.model;
 /**
  * ENUM: TransactionStatus
  *
- * Tracks the lifecycle of a single payment attempt.
+ * <p>Tracks the lifecycle of a single payment attempt.
  *
- * Lifecycle:
+ * <p>Lifecycle:
  *   INITIATED  →  SUCCESS   (payment confirmed by gateway callback)
  *   INITIATED  →  FAILED    (gateway rejected or student cancelled)
  *   SUCCESS    →  RECONCILED (ledger updated, bill marked as paid)

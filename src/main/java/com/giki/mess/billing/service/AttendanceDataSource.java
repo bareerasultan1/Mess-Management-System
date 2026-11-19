@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * PORT: what Billing needs from the Attendance module.
  *
- * Billing depends on this small interface instead of on Bareera's AttendanceTracker
+ * <p>Billing depends on this small interface instead of on Bareera's AttendanceTracker
  * (Dependency Inversion + low coupling). Her module can implement it later;
  * until then tests and the demo use a fake.
  */

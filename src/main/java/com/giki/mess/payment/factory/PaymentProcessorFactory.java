@@ -9,7 +9,7 @@ import java.util.Objects;
 /**
  * FACTORY METHOD pattern: getProcessor() decides which concrete gateway handles a channel.
  *
- * The payment service asks for a processor by channel and only ever sees the
+ * <p>The payment service asks for a processor by channel and only ever sees the
  * IPaymentProcessor interface. Adding a gateway (Raast, SadaPay...) means writing one new
  * class and registering it here, so no existing billing or payment code is modified (OCP).
  * The rejected alternative was a switch statement inside PaymentService.
@@ -22,6 +22,11 @@ public class PaymentProcessorFactory {
         this.processors = Map.copyOf(Objects.requireNonNull(processors, "processors"));
     }
 
+    /**
+     * Returns the processor registered for the channel.
+     *
+     * @throws com.giki.mess.payment.exception.UnsupportedPaymentChannelException for a null or unknown channel
+     */
     public IPaymentProcessor getProcessor(PaymentChannel channel) {
         if (channel == null) {
             throw new UnsupportedPaymentChannelException("Payment channel must not be null");

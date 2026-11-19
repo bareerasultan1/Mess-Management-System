@@ -92,7 +92,8 @@ public class PostgresBillRepository implements IBillRepository {
             del.executeUpdate();
         }
         try (PreparedStatement ins = c.prepareStatement(
-                "INSERT INTO bill_items (item_id, bill_id, student_id, scan_time, meal_type, rate_paisa) VALUES (?,?,?,?,?,?)")) {
+                "INSERT INTO bill_items (item_id, bill_id, student_id, scan_time, meal_type, rate_paisa) "
+                    + "VALUES (?,?,?,?,?,?)")) {
             for (BillItem item : bill.getItems()) {
                 ins.setString(1, item.getItemId());
                 ins.setString(2, bill.getBillId());
@@ -143,7 +144,8 @@ public class PostgresBillRepository implements IBillRepository {
     private List<BillItem> loadItems(Connection c, String billId) throws SQLException {
         List<BillItem> items = new ArrayList<>();
         try (PreparedStatement ps = c.prepareStatement(
-                "SELECT item_id, student_id, scan_time, meal_type, rate_paisa FROM bill_items WHERE bill_id = ? ORDER BY scan_time, item_id")) {
+                "SELECT item_id, student_id, scan_time, meal_type, rate_paisa FROM bill_items "
+                    + "WHERE bill_id = ? ORDER BY scan_time, item_id")) {
             ps.setString(1, billId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

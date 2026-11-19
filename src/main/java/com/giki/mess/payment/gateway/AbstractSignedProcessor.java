@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
  * Behaviour shared by the simulated gateways (Template Method style: subclasses only add
  * their channel and, if needed, extra checks).
  *
- * SECURITY (QA-05): every callback carries an HMAC-SHA256 signature over its important
+ * <p>SECURITY (QA-05): every callback carries an HMAC-SHA256 signature over its important
  * fields. A forged callback, or one whose amount was changed, cannot produce a matching
  * signature without the secret. Comparison is constant-time. Callbacks older than
  * 15 minutes (or dated in the future) are rejected so an old message cannot be replayed.

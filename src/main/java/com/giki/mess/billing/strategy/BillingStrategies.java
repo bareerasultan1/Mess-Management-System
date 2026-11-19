@@ -11,6 +11,9 @@ public final class BillingStrategies {
     private BillingStrategies() {
     }
 
+    /**
+     * Returns the standard, subsidized, scholarship and guest strategies keyed by category.
+     */
     public static Map<StudentCategory, BillingCalculationStrategy> defaults(TariffConfiguration tariff) {
         Map<StudentCategory, BillingCalculationStrategy> map = new EnumMap<>(StudentCategory.class);
         map.put(StudentCategory.REGULAR, new StandardBillingStrategy(tariff));

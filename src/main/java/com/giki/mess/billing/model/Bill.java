@@ -1,5 +1,6 @@
 package com.giki.mess.billing.model;
 
+import com.giki.mess.common.Guard;
 import com.giki.mess.common.Money;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -9,11 +10,11 @@ import java.util.List;
 /**
  * DOMAIN ENTITY: Bill
  *
- * Represents the MONTHLY SUMMARY invoice generated for a single student.
+ * <p>Represents the MONTHLY SUMMARY invoice generated for a single student.
  * Think of it like a monthly electricity bill — it shows you the totals
  * and breakdown, not each individual unit consumed (that's BillItem's job).
  *
- * Fields explanation:
+ * <p>Fields explanation:
  * ───────────────────
  *  baseAmount   → Total money charged for all attended meals (before adjustments)
  *  rebateAmount → PKR deducted for registered absences of >= 3 consecutive days
@@ -21,7 +22,7 @@ import java.util.List;
  *  discountAmount → PKR deducted for scholarship students (25% of net meals)
  *  netPayable   → Final amount = baseAmount - rebateAmount + fineAmount - discountAmount
  *
- * MUTABILITY:
+ * <p>MUTABILITY:
  *   Unlike BillItem, a Bill CAN change state.  Why?  Because:
  *     - A bill starts as UNPAID
  *     - Later it becomes PAID (when payment settles)
@@ -29,7 +30,7 @@ import java.util.List;
  *   The bill itself (amounts) is sealed at generation time, but its
  *   paymentStatus and netPayable get updated through controlled methods only.
  */
-public class Bill {
+public final class Bill {
 
     private final String billId;
     private final String studentId;
@@ -57,40 +58,20 @@ public class Bill {
                 Money fineAmount, Money discountAmount, List<BillItem> items) {
 
         // Defensive validation
-        if (billId == null || billId.isBlank()) {
-            throw new IllegalArgumentException("Bill ID cannot be null or blank");
-        }
-        if (studentId == null || studentId.isBlank()) {
-            throw new IllegalArgumentException("Student ID cannot be null or blank");
-        }
-        if (month < 1 || month > 12) {
-            throw new IllegalArgumentException("Month must be between 1 and 12, got: " + month);
-        }
-        if (year < 2020) {
-            throw new IllegalArgumentException("Year seems invalid: " + year);
-        }
-        if (dueDate == null) {
-            throw new IllegalArgumentException("Due date cannot be null");
-        }
+        Guard.notBlank(billId, "Bill ID cannot be null or blank");
+        Guard.notBlank(studentId, "Student ID cannot be null or blank");
+        Guard.require(!(month < 1 || month > 12), "Month must be between 1 and 12, got: " + month);
+        Guard.require(!(year < 2020), "Year seems invalid: " + year);
+        Guard.notNull(dueDate, "Due date cannot be null");
         if (baseAmount == null || rebateAmount == null
                 || fineAmount == null || discountAmount == null) {
             throw new IllegalArgumentException("Monetary amounts cannot be null");
         }
-        if (items == null) {
-            throw new IllegalArgumentException("Bill items list cannot be null");
-        }
-        if (baseAmount.isNegative()) {
-            throw new IllegalArgumentException("Base amount cannot be negative");
-        }
-        if (rebateAmount.isNegative()) {
-            throw new IllegalArgumentException("Rebate amount cannot be negative");
-        }
-        if (fineAmount.isNegative()) {
-            throw new IllegalArgumentException("Fine amount cannot be negative");
-        }
-        if (discountAmount.isNegative()) {
-            throw new IllegalArgumentException("Discount amount cannot be negative");
-        }
+        Guard.notNull(items, "Bill items list cannot be null");
+        Guard.require(!(baseAmount.isNegative()), "Base amount cannot be negative");
+        Guard.require(!(rebateAmount.isNegative()), "Rebate amount cannot be negative");
+        Guard.require(!(fineAmount.isNegative()), "Fine amount cannot be negative");
+        Guard.require(!(discountAmount.isNegative()), "Discount amount cannot be negative");
 
         this.billId         = billId;
         this.studentId      = studentId;
@@ -116,10 +97,13 @@ public class Bill {
         Bill bill = new Bill(billId, studentId, month, year, dueDate, baseAmount, rebateAmount,
             fineAmount, discountAmount, items);
         if (netPayable == null || netPayable.isNegative() || paymentStatus == null) {
-            throw new IllegalArgumentException("netPayable and paymentStatus are required");
+            throw new IllegalArgumentException(
+                "netPayable and paymentStatus are required");
         }
-        bill.netPayable = netPayable;
-        bill.paymentStatus = paymentStatus;
+        synchronized (bill) {          // same lock as every other access to these two fields
+            bill.netPayable = netPayable;
+            bill.paymentStatus = paymentStatus;
+        }
         return bill;
     }
 
@@ -152,7 +136,8 @@ public class Bill {
      */
     public synchronized void applyPartialPayment(Money amountPaid) {
         if (amountPaid == null || !amountPaid.isPositive()) {
-            throw new IllegalArgumentException("Payment amount must be positive, got: " + amountPaid);
+            throw new IllegalArgumentException(
+                "Payment amount must be positive, got: " + amountPaid);
         }
         this.netPayable = this.netPayable.minus(amountPaid).floorAtZero();
         if (this.netPayable.isZero()) {
@@ -169,7 +154,8 @@ public class Bill {
      */
     public synchronized void applyPayment(Money amountPaid) {
         if (amountPaid == null || !amountPaid.isPositive()) {
-            throw new IllegalArgumentException("Payment amount must be positive, got: " + amountPaid);
+            throw new IllegalArgumentException(
+                "Payment amount must be positive, got: " + amountPaid);
         }
         if (amountPaid.compareTo(netPayable) >= 0) {
             markAsPaid();
@@ -180,17 +166,49 @@ public class Bill {
 
     // ── Getters (read-only access from outside) ──────────────────────────────
 
-    public String getBillId()          { return billId;         }
-    public String getStudentId()       { return studentId;      }
-    public int getMonth()              { return month;          }
-    public int getYear()               { return year;           }
-    public LocalDate getDueDate()      { return dueDate;        }
-    public Money getBaseAmount()      { return baseAmount;     }
-    public Money getRebateAmount()    { return rebateAmount;   }
-    public Money getFineAmount()      { return fineAmount;     }
-    public Money getDiscountAmount()  { return discountAmount; }
-    public synchronized Money getNetPayable() { return netPayable; }
-    public synchronized PaymentStatus getPaymentStatus() { return paymentStatus; }
+    public String getBillId() {
+        return billId;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public int getMonth() {
+        return month;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public Money getBaseAmount() {
+        return baseAmount;
+    }
+
+    public Money getRebateAmount() {
+        return rebateAmount;
+    }
+
+    public Money getFineAmount() {
+        return fineAmount;
+    }
+
+    public Money getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public synchronized Money getNetPayable() {
+        return netPayable;
+    }
+
+    public synchronized PaymentStatus getPaymentStatus() {
+        return paymentStatus;
+    }
 
     /**
      * Returns an UNMODIFIABLE view of the bill items.

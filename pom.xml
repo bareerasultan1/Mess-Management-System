@@ -230,6 +230,17 @@
                     <threshold>Medium</threshold>
                     <excludeFilterFile>config/spotbugs-exclude.xml</excludeFilterFile>
                 </configuration>
+                <executions>
+                    <!-- QUALITY GATE: `mvn verify` FAILS on any SpotBugs finding that is not a
+                         documented, justified exclusion in config/spotbugs-exclude.xml. -->
+                    <execution>
+                        <id>spotbugs-gate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- ── Exec Plugin ─────────────────────────────────────

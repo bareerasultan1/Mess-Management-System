@@ -14,6 +14,9 @@ public record PaymentCallback(
         Instant issuedAt,
         String signature) {
 
+    /**
+     * Rejects a callback with missing fields.
+     */
     public PaymentCallback {
         if (transactionId == null || studentId == null || billId == null || amount == null
                 || status == null || gatewayReference == null || issuedAt == null

@@ -11,20 +11,23 @@ import org.slf4j.LoggerFactory;
  * OBSERVER pattern, subject side: the Attendance module publishes a ScanEvent here and does
  * not know who listens.
  *
- * ASYNCHRONOUS ON PURPOSE: each observer runs on a worker thread, so publish() returns at
+ * <p>ASYNCHRONOUS ON PURPOSE: each observer runs on a worker thread, so publish() returns at
  * once. A slow or failing billing database therefore can never freeze the mess-gate turnstile.
  * An exception inside one observer is logged and contained; the other observers still run.
  *
- * Thread safety: the observer list is a CopyOnWriteArrayList (safe to register while events are
+ * <p>Thread safety: the observer list is a CopyOnWriteArrayList (safe to register while events are
  * being published) and ScanEvent is immutable.
  */
-public class AttendanceSubject implements AutoCloseable {
+public final class AttendanceSubject implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AttendanceSubject.class);
 
     private final List<AttendanceObserver> observers = new CopyOnWriteArrayList<>();
     private final ExecutorService executor;
 
+    /**
+     * Creates a subject that notifies its observers on the given executor.
+     */
     public AttendanceSubject(ExecutorService executor) {
         if (executor == null) {
             throw new IllegalArgumentException("executor cannot be null");
@@ -32,6 +35,9 @@ public class AttendanceSubject implements AutoCloseable {
         this.executor = executor;
     }
 
+    /**
+     * Adds an observer that will receive every published scan event.
+     */
     public void register(AttendanceObserver observer) {
         if (observer == null) {
             throw new IllegalArgumentException("observer cannot be null");

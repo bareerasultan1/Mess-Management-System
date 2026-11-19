@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 public record ScanEvent(String eventId, String studentId, LocalDateTime timestamp,
                         MealType mealType, String terminalId) {
 
+    /**
+     * Rejects missing fields so an invalid event can never exist.
+     */
     public ScanEvent {
         if (eventId == null || eventId.isBlank()) {
             throw new IllegalArgumentException("ScanEvent eventId cannot be null or blank");

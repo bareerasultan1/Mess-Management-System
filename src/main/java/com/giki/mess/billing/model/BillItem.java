@@ -1,35 +1,36 @@
 package com.giki.mess.billing.model;
 
+import com.giki.mess.common.Guard;
 import com.giki.mess.common.Money;
 import java.time.LocalDateTime;
 
 /**
  * DOMAIN ENTITY: BillItem
  *
- * Represents a SINGLE meal event that will appear as a line item on the
+ * <p>Represents a SINGLE meal event that will appear as a line item on the
  * student's monthly bill — like one row on a phone bill.
  *
- * Example:
+ * <p>Example:
  *   Date: Nov 1, 2026  |  Meal: LUNCH  |  Rate: 120 PKR
  *   Date: Nov 1, 2026  |  Meal: DINNER |  Rate: 150 PKR
  *
- * WHY IS THIS A SEPARATE CLASS FROM Bill?
+ * <p>WHY IS THIS A SEPARATE CLASS FROM Bill?
  * ─────────────────────────────────────────
  * A Bill is the SUMMARY (total due, rebates, fines, etc.).
  * A BillItem is the RAW DATA (each individual scan event).
  *
- * Separating them means:
+ * <p>Separating them means:
  *   1. You can audit exactly which scans contributed to a bill (dispute resolution)
  *   2. If a student claims "I didn't eat dinner on Nov 5", you can look up the
  *      exact BillItem with the timestamp and terminal ID — traceability.
  *   3. The itemized invoice feature (FR-002) is easy to generate by listing BillItems.
  *
- * IMMUTABILITY:
+ * <p>IMMUTABILITY:
  *   Notice there are no setters.  Once a BillItem is created from an attendance
  *   scan, it should NEVER change.  It is a historical audit record.
  *   This makes it safe to share across threads (no locking needed).
  */
-public class BillItem {
+public final class BillItem {
 
     private final String itemId;         // Unique ID for this line item
     private final String billId;         // Which bill this item belongs to
@@ -53,21 +54,11 @@ public class BillItem {
 
         // DEFENSIVE PROGRAMMING: validate every input before storing it
         // This is SE423 requirement (defensive programming criterion)
-        if (itemId == null || itemId.isBlank()) {
-            throw new IllegalArgumentException("BillItem itemId cannot be null or blank");
-        }
-        if (billId == null || billId.isBlank()) {
-            throw new IllegalArgumentException("BillItem billId cannot be null or blank");
-        }
-        if (studentId == null || studentId.isBlank()) {
-            throw new IllegalArgumentException("BillItem studentId cannot be null or blank");
-        }
-        if (scanTime == null) {
-            throw new IllegalArgumentException("BillItem scanTime cannot be null");
-        }
-        if (mealType == null) {
-            throw new IllegalArgumentException("BillItem mealType cannot be null");
-        }
+        Guard.notBlank(itemId, "BillItem itemId cannot be null or blank");
+        Guard.notBlank(billId, "BillItem billId cannot be null or blank");
+        Guard.notBlank(studentId, "BillItem studentId cannot be null or blank");
+        Guard.notNull(scanTime, "BillItem scanTime cannot be null");
+        Guard.notNull(mealType, "BillItem mealType cannot be null");
         if (rateApplied == null || !rateApplied.isPositive()) {
             throw new IllegalArgumentException(
                 "BillItem rateApplied must be positive, got: " + rateApplied);
@@ -83,12 +74,29 @@ public class BillItem {
 
     // ── Getters only — no setters (immutable audit record) ──────────────────
 
-    public String getItemId()           { return itemId;     }
-    public String getBillId()           { return billId;     }
-    public String getStudentId()        { return studentId;  }
-    public LocalDateTime getScanTime()  { return scanTime;   }
-    public MealType getMealType()       { return mealType;   }
-    public Money getRateApplied()      { return rateApplied; }
+    public String getItemId() {
+        return itemId;
+    }
+
+    public String getBillId() {
+        return billId;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public LocalDateTime getScanTime() {
+        return scanTime;
+    }
+
+    public MealType getMealType() {
+        return mealType;
+    }
+
+    public Money getRateApplied() {
+        return rateApplied;
+    }
 
     @Override
     public String toString() {

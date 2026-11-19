@@ -3,9 +3,9 @@ package com.giki.mess.billing.model;
 /**
  * ENUM: StudentCategory
  *
- * Determines which tariff strategy applies to the student (Strategy Pattern — Day 2).
+ * <p>Determines which tariff strategy applies to the student (Strategy Pattern — Day 2).
  *
- * Why this matters for billing:
+ * <p>Why this matters for billing:
  *   - REGULAR students pay the full standard rate
  *   - SCHOLAR students get a 25% discount on net meal costs
  *   - SUBSIDIZED students pay a reduced daily rate (e.g. need-based subsidy)

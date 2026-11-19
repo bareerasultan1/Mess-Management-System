@@ -14,7 +14,7 @@ import java.sql.Statement;
 /**
  * Access to the PostgreSQL database.
  *
- * Opening a PostgreSQL connection is slow, so a small connection pool (HikariCP) keeps a few
+ * <p>Opening a PostgreSQL connection is slow, so a small connection pool (HikariCP) keeps a few
  * connections open and lends them out; closing a lent connection simply returns it to the pool.
  * inTransaction() groups several statements so a multi-table update is all-or-nothing.
  */

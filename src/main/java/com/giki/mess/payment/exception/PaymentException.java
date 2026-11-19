@@ -3,16 +3,16 @@ package com.giki.mess.payment.exception;
 /**
  * BASE EXCEPTION — Payment Module
  *
- * WHY SEPARATE FROM BillingException?
+ * <p>WHY SEPARATE FROM BillingException?
  * ─────────────────────────────────────────────
  * Payment failures are a different category of problem from billing
  * calculation errors.  When a JazzCash callback arrives and the signature
  * is invalid, that is a PAYMENT security issue — not a billing rule violation.
  *
- * By separating them, future developers (or your team members) can
+ * <p>By separating them, future developers (or your team members) can
  * catch ONLY payment failures without accidentally swallowing billing errors.
  *
- * HIERARCHY:
+ * <p>HIERARCHY:
  *   PaymentException   (this class — base for all payment errors)
  *   ├── DuplicateTransactionException  (same payment submitted twice)
  *   ├── GatewayTimeoutException        (JazzCash/EasyPaisa timed out)

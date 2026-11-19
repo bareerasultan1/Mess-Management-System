@@ -5,18 +5,23 @@ import java.util.Map;
 /**
  * Where and how to reach the PostgreSQL server.
  *
- * The password is never written in code or committed to Git: it is read from the environment
+ * <p>The password is never written in code or committed to Git: it is read from the environment
  * variable MESS_DB_PASSWORD. The other settings have defaults for a local development server.
  *
- *   MESS_DB_URL       default jdbc:postgresql://localhost:5432/mess_db
- *   MESS_DB_USER      default mess_user
- *   MESS_DB_PASSWORD  required
+ * <pre>
+ * MESS_DB_URL       default jdbc:postgresql://localhost:5432/mess_db
+ * MESS_DB_USER      default mess_user
+ * MESS_DB_PASSWORD  required
+ * </pre>
  */
 public record DatabaseConfig(String url, String user, String password) {
 
     public static final String DEFAULT_URL = "jdbc:postgresql://localhost:5432/mess_db";
     public static final String DEFAULT_USER = "mess_user";
 
+    /**
+     * Rejects a url that is not PostgreSQL, a blank user or a null password.
+     */
     public DatabaseConfig {
         if (url == null || !url.startsWith("jdbc:postgresql:")) {
             throw new IllegalArgumentException("Database url must start with jdbc:postgresql:");

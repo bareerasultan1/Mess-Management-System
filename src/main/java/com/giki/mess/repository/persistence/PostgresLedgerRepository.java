@@ -19,12 +19,12 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * PostgreSQL storage of student ledgers.
  *
- * IDENTITY MAP: the repository hands out ONE StudentLedger object per student inside the
+ * <p>IDENTITY MAP: the repository hands out ONE StudentLedger object per student inside the
  * process. That keeps the object's ReentrantLock meaningful: two threads changing the same
  * student share the same lock instead of working on two private copies (which would lose
  * updates). save() writes the current state through to the database.
  *
- * WRITE ORDER: the snapshot is taken INSIDE a per-student lock together with the SQL write, so
+ * <p>WRITE ORDER: the snapshot is taken INSIDE a per-student lock together with the SQL write, so
  * a slower thread can never overwrite a newer balance with an older one.
  */
 public class PostgresLedgerRepository implements ILedgerRepository {
@@ -82,7 +82,8 @@ public class PostgresLedgerRepository implements ILedgerRepository {
         try {
             return db.read(c -> {
                 try (PreparedStatement ps = c.prepareStatement(
-                        "SELECT category, balance_paisa, unbilled_meals, status FROM student_ledgers WHERE student_id = ?")) {
+                        "SELECT category, balance_paisa, unbilled_meals, status FROM student_ledgers "
+                            + "WHERE student_id = ?")) {
                     ps.setString(1, studentId);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (!rs.next()) {
@@ -111,7 +112,8 @@ public class PostgresLedgerRepository implements ILedgerRepository {
         try {
             List<String> ids = db.read(c -> {
                 List<String> found = new ArrayList<>();
-                try (PreparedStatement ps = c.prepareStatement("SELECT student_id FROM student_ledgers ORDER BY student_id");
+                try (PreparedStatement ps = c.prepareStatement(
+                        "SELECT student_id FROM student_ledgers ORDER BY student_id");
                      ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         found.add(rs.getString(1));
@@ -135,7 +137,8 @@ public class PostgresLedgerRepository implements ILedgerRepository {
         synchronized (lock) {
             try {
                 db.inTransaction(c -> {
-                    try (PreparedStatement ps = c.prepareStatement("DELETE FROM student_ledgers WHERE student_id = ?")) {
+                    try (PreparedStatement ps = c.prepareStatement(
+                            "DELETE FROM student_ledgers WHERE student_id = ?")) {
                         ps.setString(1, studentId);
                         ps.executeUpdate();
                     }

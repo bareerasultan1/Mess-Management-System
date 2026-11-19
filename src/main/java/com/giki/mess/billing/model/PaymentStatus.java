@@ -3,13 +3,13 @@ package com.giki.mess.billing.model;
 /**
  * ENUM: PaymentStatus
  *
- * Represents the lifecycle state of a student's Bill.
+ * <p>Represents the lifecycle state of a student's Bill.
  * Using an enum (instead of a String like "unpaid", "paid") means:
  *   1. The compiler catches typos at build time — "PIAD" would be a compile error
  *   2. You can switch() on it safely
  *   3. It self-documents the valid states in the system
  *
- * Lifecycle:
+ * <p>Lifecycle:
  *   UNPAID  →  PARTIALLY_PAID  →  PAID
  *       └──────────────────────→  OVERDUE (if payment not received by due date)
  */

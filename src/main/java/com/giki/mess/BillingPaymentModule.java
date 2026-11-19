@@ -35,7 +35,7 @@ import java.util.concurrent.Executors;
  * COMPOSITION ROOT: the one place where concrete classes are chosen and plugged together
  * (Dependency Injection by hand). Everything else depends on interfaces only.
  *
- * The Attendance module (owned by a teammate) is connected through two small ports:
+ * <p>The Attendance module (owned by a teammate) is connected through two small ports:
  * AttendanceDataSource (what Billing reads) and AttendanceSubject (where scans are published).
  */
 public final class BillingPaymentModule implements AutoCloseable {

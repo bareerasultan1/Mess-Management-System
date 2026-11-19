@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,9 +35,9 @@ import java.util.concurrent.TimeUnit;
  * variables MESS_DB_URL, MESS_DB_USER and MESS_DB_PASSWORD, and prints what happens.
  * Afterwards you can open pgAdmin or psql and see the rows this program created.
  *
- * Run it with:   mvn -q compile exec:java
+ * <p>Run it with:   mvn -q compile exec:java
  *
- * Each run uses a fresh demo student (id 20990xx) so it can be repeated; the rows stay in the
+ * <p>Each run uses a fresh demo student (id 20990xx) so it can be repeated; the rows stay in the
  * database on purpose so that you can inspect them.
  */
 public final class DemoRunner {
@@ -44,6 +45,9 @@ public final class DemoRunner {
     private DemoRunner() {
     }
 
+    /**
+     * Runs the demonstration against the database named by the environment.
+     */
     public static void main(String[] args) throws Exception {
         DatabaseConfig config = DatabaseConfig.fromEnvironment();
         System.out.println("Connecting with " + config);
@@ -68,7 +72,7 @@ public final class DemoRunner {
             }
         };
 
-        String student = "20990" + (10 + (int) (Math.random() * 89));
+        String student = "20990" + ThreadLocalRandom.current().nextInt(10, 99);
         String billId = "BILL-" + student + "-2026-11";
 
         try (BillingPaymentModule app = BillingPaymentModule.create(config, clock, secrets, attendance)) {

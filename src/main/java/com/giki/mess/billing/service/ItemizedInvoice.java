@@ -23,4 +23,10 @@ public record ItemizedInvoice(
         Money fineAmount,
         Money netPayable,
         List<BillItem> lines) {
+
+    /** Copies the collections so the invoice stays unchangeable after it is created. */
+    public ItemizedInvoice {
+        mealsByType = Map.copyOf(mealsByType);
+        lines = List.copyOf(lines);
+    }
 }

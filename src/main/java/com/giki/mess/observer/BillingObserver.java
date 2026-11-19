@@ -7,10 +7,13 @@ import com.giki.mess.billing.service.BillingService;
  * Attendance never calls Billing directly, so a slow or failing ledger cannot hold up
  * the turnstile (that was the rejected synchronous alternative).
  */
-public class BillingObserver implements AttendanceObserver {
+public final class BillingObserver implements AttendanceObserver {
 
     private final BillingService billingService;
 
+    /**
+     * Creates an observer that records scanned meals through the billing service.
+     */
     public BillingObserver(BillingService billingService) {
         if (billingService == null) {
             throw new IllegalArgumentException("billingService cannot be null");

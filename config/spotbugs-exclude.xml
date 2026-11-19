@@ -1,5 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- SpotBugs exclusions. Each exclusion must be a JUSTIFIED false positive recorded in
-     docs/sqa/STATIC_ANALYSIS_REPORT.md. Empty until the findings have been triaged. -->
+<!-- SpotBugs exclusions. Every entry is a JUSTIFIED false positive and is listed in
+     docs/sqa/STATIC_ANALYSIS_REPORT.md. Anything not listed here fails the build (spotbugs:check). -->
 <FindBugsFilter>
+  <!-- Composition root: handing out the wired collaborators is its purpose. -->
+  <Match>
+    <Class name="com.giki.mess.BillingPaymentModule"/>
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+  <!-- Constructor injection: the service stores the collaborator it was given (dependency injection). -->
+  <Match>
+    <Or>
+      <Class name="com.giki.mess.api.BillingPaymentApi"/>
+      <Class name="com.giki.mess.billing.service.BillingServiceImpl"/>
+    </Or>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+  <!-- Abstract base class validates its arguments in the constructor. All fields are final, the
+       class hierarchy is closed to three project classes, and no finalizer exists. -->
+  <Match>
+    <Class name="com.giki.mess.payment.gateway.AbstractSignedProcessor"/>
+    <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+  </Match>
 </FindBugsFilter>

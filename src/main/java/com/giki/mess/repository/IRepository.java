@@ -6,32 +6,34 @@ import java.util.Optional;
 /**
  * GENERIC REPOSITORY INTERFACE
  *
- * WHY DO WE HAVE A REPOSITORY LAYER?  (Answers the "why are we using this pattern?" question)
+ * <p>WHY DO WE HAVE A REPOSITORY LAYER?  (Answers the "why are we using this pattern?" question)
  * ────────────────────────────────────────────────────────────────────────────────────────────
  * The repository pattern separates "business logic" from "how data is stored."
  *
- * Without it, your BillingService would look like:
+ * <p>Without it, your BillingService would look like:
  *   Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost/mess_db");
  *   Statement stmt = conn.createStatement();
  *   ResultSet rs = stmt.executeQuery("SELECT * FROM bills WHERE ...");
  *   // ... 50 lines of JDBC boilerplate inside your business logic
  *
- * Problems with that:
+ * <p>Problems with that:
  *   1. Testing is IMPOSSIBLE — you cannot run unit tests without a real database
  *   2. If you switch from PostgreSQL to another database, you must rewrite BillingService
  *   3. SQL is mixed with business rules — code is unreadable
  *
- * With this interface:
+ * <p>With this interface:
  *   - BillingService only sees: repository.save(bill), repository.findById(id)
  *   - For TESTS: you use a simple InMemoryRepository (just a HashMap, no database)
  *   - For PRODUCTION: you swap in a PostgresRepository — BillingService doesn't care
  *
- * This is the "D" in SOLID — Dependency Inversion Principle.
+ * <p>This is the "D" in SOLID — Dependency Inversion Principle.
  * (BillingService depends on this INTERFACE, not a concrete database class)
  *
  * @param <T>  The entity type (Bill, StudentLedger, PaymentTransaction, etc.)
  * @param <ID> The primary key type (usually String for UUID-based IDs)
  */
+// I-prefix (approved naming convention) and ID (conventional primary-key type name): see static analysis report.
+@SuppressWarnings({"checkstyle:abbreviationaswordinname", "checkstyle:interfacetypeparametername"})
 public interface IRepository<T, ID> {
 
     /**
@@ -45,7 +47,7 @@ public interface IRepository<T, ID> {
     /**
      * Finds an entity by its primary key.
      *
-     * Returns Optional (not null) because:
+     * <p>Returns Optional (not null) because:
      *   - Returning null forces callers to do null checks or risk NullPointerException
      *   - Optional forces the caller to explicitly handle the "not found" case
      *   - This is a modern Java best practice for lookups that may return nothing
