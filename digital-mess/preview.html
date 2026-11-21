@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mess Management System — UI Preview</title>
+<style>
+:root{--navy:#101b45;--paper:#fafaf5;color:var(--navy);font:16px system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#e9ece9}button,input{font:inherit}button{cursor:pointer}
+main{max-width:440px;min-height:100dvh;margin:auto;position:relative;display:flex;flex-direction:column;background:radial-gradient(circle at 85% 65%,#e1eadc 0 4%,transparent 5% 9%,#e5ede0 10%,transparent 11% 15%,#e8eee4 16%,transparent 17%),var(--paper);box-shadow:0 0 40px #101b4518}
+header{padding:28px 24px 15px;font:1.06rem Georgia,serif}header span{font-size:1.45rem;margin-right:8px}
+section{padding:26px 24px 34px;flex:1}section[hidden],nav[hidden]{display:none}
+h1{font-size:1.65rem;line-height:1.2;margin:0 0 14px}p{line-height:1.5}.center{text-align:center}
+.eyebrow{font-size:.68rem;font-weight:750;letter-spacing:.16em;text-transform:uppercase;color:#58617c}
+.hero{padding-top:65px}.art{font-size:5rem;display:block;margin:32px auto;color:#517354}
+.pill,.primary{border:0;border-radius:999px;background:var(--navy);color:white;padding:13px 22px;font-weight:700}.wide{width:100%}
+form{text-align:left}label{display:block;font-size:.82rem;font-weight:700;margin:15px 0 6px}input{width:100%;padding:13px 16px;border:1px solid #344067;border-radius:999px;background:var(--navy);color:white}input::placeholder{color:#d9deee}form button{margin-top:20px}
+.panel{background:var(--navy);border-radius:18px;padding:8px 17px;color:white}.panel button{display:block;text-align:left;width:100%;color:inherit;background:transparent;border:0;border-bottom:1px solid #ffffff38;padding:17px 0}.panel button:last-child{border:0}
+nav{display:flex;justify-content:space-around;padding:10px;background:var(--navy)}nav button{color:white;background:transparent;border:0;padding:8px 12px;border-radius:12px}nav button[aria-current]{background:white;color:var(--navy)}
+.card{border:1px solid #d9dfd4;border-radius:18px;background:#ffffffcb;padding:20px;margin:20px 0}.month{display:block;text-align:center}
+.toggle{display:inline-flex;align-items:center;gap:10px;border:0;background:transparent;color:var(--navy);font-weight:800}.track{display:inline-block;width:66px;padding:4px;border-radius:999px;background:var(--navy)}.track::before{content:'';display:block;width:24px;height:24px;border-radius:50%;background:white;transition:transform .18s}.toggle[aria-pressed=true] .track::before{transform:translateX(34px)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:.7rem}.week span{padding:8px 0;background:#edf0eb;border-radius:6px}.week strong{display:block;margin-top:4px}
+.note{color:#525c75;font-size:.8rem}.error{color:#a32132;font-size:.85rem}
+</style>
+<main>
+<header><span aria-hidden="true">🍽</span>Mess Management System</header>
+<section id="landing" class="center hero">
+<p class="eyebrow">Digital Mess · Design Preview</p>
+<h1>Simplify Your Daily<br>Mess Tasks with Ease</h1>
+<p>View your mess attendance and check your IN/OUT status in one place.</p>
+<span class="art" aria-hidden="true">🍽</span>
+<button class="primary" data-page="login">Get Started</button>
+</section>
+<section id="login" hidden>
+<div class="center"><span class="art" aria-hidden="true">🍽</span><h1>Welcome to the Mess<br>Management System</h1></div>
+<form id="sign-in">
+<label for="username">Username</label><input id="username" placeholder="ali" required autocomplete="off">
+<label for="password">Password</label><input id="password" type="password" placeholder="Demo password" required autocomplete="off">
+<button class="primary wide">Log In</button><p id="error" class="error" role="alert"></p>
+</form>
+<p class="note">Design preview only. Use <b>ali</b> / <b>Mess@1234</b>. Do not enter real credentials.</p>
+<button class="primary" data-page="register">Create Account</button>
+</section>
+<section id="register" hidden>
+<h1>Create Student Account</h1>
+<p class="note">Use fictional details. Accounts are kept only until you reload.</p>
+<form id="registration">
+<label for="student-name">Full name</label><input id="student-name" required maxlength="100">
+<label for="new-username">Username</label><input id="new-username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]+">
+<label for="new-password">Demo password (8+ characters)</label><input id="new-password" type="password" required minlength="8" autocomplete="new-password">
+<label for="fingerprint">Simulated fingerprint ID (e.g. FP-2048)</label><input id="fingerprint" required pattern="FP-[0-9]{1,10}" placeholder="FP-2048">
+<button class="primary wide">Register</button><p id="register-error" class="error" role="alert"></p>
+</form>
+<button class="primary" data-page="login">Back to Log In</button>
+</section>
+<section id="dashboard" hidden>
+<p class="eyebrow">Student Dashboard</p><h1 id="welcome">Welcome</h1>
+<div class="panel"><button data-page="attendance">▣ &nbsp; Mess In/Out</button><button data-page="profile">◯ &nbsp; Profile</button></div>
+<p class="note">Menu, billing and complaints are separate modules.</p>
+</section>
+<section id="attendance" hidden>
+<h1 class="center">Mess In/Out</h1><div class="pill month" id="month"></div>
+<div class="card center"><h2 id="status" aria-live="polite">Your mess is currently OUT</h2>
+<div class="toggle" id="toggle" aria-pressed="false" aria-hidden="true">OUT <span class="track"></span> IN</div>
+<form id="biometric">
+<label for="scan-id">Fingerprint ID</label><input id="scan-id" required placeholder="FP-1023" pattern="FP-[0-9]{1,10}">
+<button class="primary wide" id="scan-button">Scan &amp; Enter Mess</button>
+<p id="scan-message" role="status"></p>
+</form>
+<p class="note">Simulated fingerprint · no sensor or database writes</p></div>
+<h3>Last Seven Days</h3><div class="week" id="week"></div>
+</section>
+<section id="profile" hidden>
+<h1 class="center">Profile</h1><div class="card"><strong id="profile-name"></strong><p id="profile-fingerprint"></p></div>
+<button class="primary" id="logout">Log Out</button>
+</section>
+<nav id="navigation" aria-label="Student navigation" hidden><button data-nav="attendance" data-page="attendance">In/Out</button><button data-nav="dashboard" data-page="dashboard">Home</button><button data-nav="profile" data-page="profile">Profile</button></nav>
+</main>
+<script>
+const byId = (name) => document.getElementById(name);
+const sections = [...document.querySelectorAll('section')];
+const students = new Map([['ali', { name: 'Ali Khan', password: 'Mess@1234', fingerprint: 'FP-1023', inside: false, scanned: false }]]);
+const normalizeFingerprint = (value) => 'FP-' + Number(value.slice(3));
+let signedIn = null;
+let inside = false;
+let scanned = false;
+function show(page) {
+  if (!signedIn && !['landing', 'login', 'register'].includes(page)) page = 'login';
+  sections.forEach(section => { section.hidden = section.id !== page; });
+  byId('navigation').hidden = !signedIn;
+  document.querySelectorAll('[data-nav]').forEach(button => {
+    if (button.dataset.nav === page) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
+  const heading = byId(page).querySelector('h1');
+  heading.tabIndex = -1;
+  heading.focus();
+}
+document.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => show(button.dataset.page)));
+byId('sign-in').addEventListener('submit', event => {
+  event.preventDefault();
+  const student = students.get(byId('username').value.trim().toLowerCase());
+  signedIn = student?.password === byId('password').value ? student : null;
+  byId('password').value = '';
+  byId('error').textContent = signedIn ? '' : 'Incorrect username or password.';
+  if (signedIn) {
+    inside = student.inside;
+    scanned = student.scanned;
+    byId('welcome').textContent = 'Welcome, ' + student.name;
+    byId('profile-name').textContent = student.name;
+    byId('profile-fingerprint').textContent = 'Simulated fingerprint: ' + student.fingerprint;
+    renderAttendance();
+    show('dashboard');
+  }
+});
+byId('registration').addEventListener('submit', event => {
+  event.preventDefault();
+  const username = byId('new-username').value.trim().toLowerCase();
+  const name = byId('student-name').value.trim();
+  const fingerprint = normalizeFingerprint(byId('fingerprint').value);
+  if (!name || students.has(username) || [...students.values()].some(student => student.fingerprint === fingerprint)) {
+    byId('register-error').textContent = 'Enter a name and choose an unused username and fingerprint ID.';
+    return;
+  }
+  students.set(username, { name, password: byId('new-password').value, fingerprint, inside: false, scanned: false });
+  event.currentTarget.reset();
+  byId('register-error').textContent = '';
+  byId('username').value = username;
+  byId('error').textContent = 'Account created. Log in with your new password.';
+  show('login');
+});
+function renderAttendance() {
+  const today = new Date();
+  byId('month').textContent = today.toLocaleDateString('en', { month: 'long', year: 'numeric' });
+  byId('status').textContent = 'Your mess is currently ' + (inside ? 'IN' : 'OUT');
+  byId('toggle').setAttribute('aria-pressed', String(inside));
+  byId('scan-button').textContent = inside ? 'Scan & Exit Mess' : 'Scan & Enter Mess';
+  byId('week').replaceChildren(...Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(today);
+    day.setDate(today.getDate() - (6 - index));
+    const cell = document.createElement('span');
+    cell.textContent = day.toLocaleDateString('en', { weekday: 'short' });
+    const state = document.createElement('strong');
+    state.textContent = index === 6 && scanned ? (inside ? 'IN' : 'OUT') : '—';
+    cell.append(state);
+    return cell;
+  }));
+}
+byId('biometric').addEventListener('submit', event => {
+  event.preventDefault();
+  if (!signedIn) return;
+  if (normalizeFingerprint(byId('scan-id').value) !== signedIn.fingerprint) {
+    byId('scan-message').textContent = 'Fingerprint ID does not match this account.';
+    return;
+  }
+  signedIn.inside = inside = !inside;
+  signedIn.scanned = scanned = true;
+  byId('scan-message').textContent = inside ? 'Entry recorded (demo).' : 'Exit recorded (demo).';
+  event.currentTarget.reset();
+  renderAttendance();
+});
+byId('logout').addEventListener('click', () => {
+  signedIn = null;
+  inside = scanned = false;
+  byId('biometric').reset();
+  byId('scan-message').textContent = '';
+  byId('sign-in').reset();
+  renderAttendance();
+  show('landing');
+});
+renderAttendance();
+</script>
+</html>
