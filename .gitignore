@@ -58,3 +58,6 @@ logs/
 # .mvn/
 # mvnw
 # mvnw.cmd
+
+# Project documents and generated reports stay on the local machine only (README.md is the only document in the repository)
+docs/

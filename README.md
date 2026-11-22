@@ -57,11 +57,6 @@ mvn clean verify
 Factory Method (`PaymentProcessorFactory`), Observer (`AttendanceSubject` / `BillingObserver`),
 Strategy (`BillingCalculationStrategy`).
 
-### Documents (`docs/`)
-`THREAD_SAFETY_STRATEGY.md`, `PERSISTENCE_AND_BOUNDARIES.md`, `AI_USAGE_LOG_M2.md`.
-Quality assurance (SE431): `docs/sqa/SQA_M2_REPORT.md` is the index (inspection, static analysis, V&V plan,
-black-box and white-box test design, SCM gates, RTM v2, risk register).
-
 ### Notes
 Payment gateways are **simulated sandboxes** (HMAC-signed callbacks); no live bank connection is used.
 The Attendance module (Bareera) plugs in through `AttendanceDataSource` and `AttendanceSubject`.
