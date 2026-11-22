@@ -20,7 +20,10 @@ nav{display:flex;justify-content:space-around;padding:10px;background:var(--navy
 .toggle{display:inline-flex;align-items:center;gap:10px;border:0;background:transparent;color:var(--navy);font-weight:800}.track{display:inline-block;width:66px;padding:4px;border-radius:999px;background:var(--navy)}.track::before{content:'';display:block;width:24px;height:24px;border-radius:50%;background:white;transition:transform .18s}.toggle[aria-pressed=true] .track::before{transform:translateX(34px)}
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:.7rem}.week span{padding:8px 0;background:#edf0eb;border-radius:6px}.week strong{display:block;margin-top:4px}
 .note{color:#525c75;font-size:.8rem}.error{color:#a32132;font-size:.85rem}
+.scan-box{display:grid;place-items:center;gap:8px;width:100%;min-height:118px;border:2px dashed #405079;border-radius:18px;background:#eef1fb;color:var(--navy);font-weight:700}
+.scan-box svg{width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}.scan-box:focus-visible{outline:3px solid #405079;outline-offset:3px}
 </style>
+<svg hidden aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><symbol id="fingerprint-icon" viewBox="0 0 32 32"><path d="M3 16a13 13 0 0 1 26 0v3M7 22v-6a9 9 0 0 1 18 0v5c0 3-1 5-2 7M11 26v-10a5 5 0 0 1 10 0v5c0 4-1 7-2 9M15 29c1-3 1-5 1-8v-5"/></symbol></svg>
 <main>
 <header><span aria-hidden="true">🍽</span>Mess Management System</header>
 <section id="landing" class="center hero">
@@ -33,11 +36,11 @@ nav{display:flex;justify-content:space-around;padding:10px;background:var(--navy
 <section id="login" hidden>
 <div class="center"><span class="art" aria-hidden="true">🍽</span><h1>Welcome to the Mess<br>Management System</h1></div>
 <form id="sign-in">
-<label for="username">Username</label><input id="username" placeholder="ali" required autocomplete="off">
-<label for="password">Password</label><input id="password" type="password" placeholder="Demo password" required autocomplete="off">
+<label for="username">Student email</label><input id="username" type="email" placeholder="ali@example.edu" required autocomplete="username">
+<label for="password">Password</label><input id="password" type="password" placeholder="Password" required autocomplete="off">
 <button class="primary wide">Log In</button><p id="error" class="error" role="alert"></p>
 </form>
-<p class="note">Design preview only. Use <b>ali</b> / <b>Mess@1234</b>. Do not enter real credentials.</p>
+<p class="note">Design preview only. Use <b>ali@example.edu</b> / <b>Mess@1234</b>. Do not enter real credentials.</p>
 <button class="primary" data-page="register">Create Account</button>
 </section>
 <section id="register" hidden>
@@ -45,9 +48,10 @@ nav{display:flex;justify-content:space-around;padding:10px;background:var(--navy
 <p class="note">Use fictional details. Accounts are kept only until you reload.</p>
 <form id="registration">
 <label for="student-name">Full name</label><input id="student-name" required maxlength="100">
-<label for="new-username">Username</label><input id="new-username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_.]+">
-<label for="new-password">Demo password (8+ characters)</label><input id="new-password" type="password" required minlength="8" autocomplete="new-password">
-<label for="fingerprint">Simulated fingerprint ID (e.g. FP-2048)</label><input id="fingerprint" required pattern="FP-[0-9]{1,10}" placeholder="FP-2048">
+<label for="new-username">Student email</label><input id="new-username" type="email" required maxlength="254" autocomplete="username">
+<label for="new-password">Password (8+ characters)</label><input id="new-password" type="password" required minlength="8" autocomplete="new-password">
+<button class="scan-box" id="enroll" type="button"><svg aria-hidden="true"><use href="#fingerprint-icon"/></svg><span id="enroll-label">Tap to enroll fingerprint</span></button>
+<p class="note" id="enroll-status" role="status">No real fingerprint will be collected.</p>
 <button class="primary wide">Register</button><p id="register-error" class="error" role="alert"></p>
 </form>
 <button class="primary" data-page="login">Back to Log In</button>
@@ -62,8 +66,7 @@ nav{display:flex;justify-content:space-around;padding:10px;background:var(--navy
 <div class="card center"><h2 id="status" aria-live="polite">Your mess is currently OUT</h2>
 <div class="toggle" id="toggle" aria-pressed="false" aria-hidden="true">OUT <span class="track"></span> IN</div>
 <form id="biometric">
-<label for="scan-id">Fingerprint ID</label><input id="scan-id" required placeholder="FP-1023" pattern="FP-[0-9]{1,10}">
-<button class="primary wide" id="scan-button">Scan &amp; Enter Mess</button>
+<button class="scan-box" type="submit"><svg aria-hidden="true"><use href="#fingerprint-icon"/></svg><span id="scan-button">Simulate Scan &amp; Enter Mess</span></button>
 <p id="scan-message" role="status"></p>
 </form>
 <p class="note">Simulated fingerprint · no sensor or database writes</p></div>
@@ -78,8 +81,18 @@ nav{display:flex;justify-content:space-around;padding:10px;background:var(--navy
 <script>
 const byId = (name) => document.getElementById(name);
 const sections = [...document.querySelectorAll('section')];
-const students = new Map([['ali', { name: 'Ali Khan', password: 'Mess@1234', fingerprint: 'FP-1023', inside: false, scanned: false }]]);
-const normalizeFingerprint = (value) => 'FP-' + Number(value.slice(3));
+const students = new Map([['ali@example.edu', { name: 'Ali Khan', password: 'Mess@1234', enrolled: true, inside: false, scanned: false }]]);
+let enrollmentCaptured = false;
+function resetEnrollment() {
+  enrollmentCaptured = false;
+  byId('enroll-label').textContent = 'Tap to enroll fingerprint';
+  byId('enroll-status').textContent = 'No real fingerprint will be collected.';
+}
+byId('enroll').addEventListener('click', () => {
+  enrollmentCaptured = true;
+  byId('enroll-label').textContent = 'Fingerprint enrolled';
+  byId('enroll-status').textContent = 'Simulated enrollment complete.';
+});
 let signedIn = null;
 let inside = false;
 let scanned = false;
@@ -101,30 +114,32 @@ byId('sign-in').addEventListener('submit', event => {
   const student = students.get(byId('username').value.trim().toLowerCase());
   signedIn = student?.password === byId('password').value ? student : null;
   byId('password').value = '';
-  byId('error').textContent = signedIn ? '' : 'Incorrect username or password.';
+  byId('error').textContent = signedIn ? '' : 'Incorrect student email or password.';
   if (signedIn) {
     inside = student.inside;
     scanned = student.scanned;
     byId('welcome').textContent = 'Welcome, ' + student.name;
     byId('profile-name').textContent = student.name;
-    byId('profile-fingerprint').textContent = 'Simulated fingerprint: ' + student.fingerprint;
+    byId('profile-fingerprint').textContent = 'Fingerprint enrolled';
+    byId('scan-message').textContent = '';
     renderAttendance();
     show('dashboard');
   }
 });
 byId('registration').addEventListener('submit', event => {
   event.preventDefault();
-  const username = byId('new-username').value.trim().toLowerCase();
+  const email = byId('new-username').value.trim().toLowerCase();
   const name = byId('student-name').value.trim();
-  const fingerprint = normalizeFingerprint(byId('fingerprint').value);
-  if (!name || students.has(username) || [...students.values()].some(student => student.fingerprint === fingerprint)) {
-    byId('register-error').textContent = 'Enter a name and choose an unused username and fingerprint ID.';
+  if (!name || students.has(email) || !enrollmentCaptured) {
+    byId('register-error').textContent = !name ? 'Enter your name.' : students.has(email)
+      ? 'That student email is already registered.' : 'Tap the fingerprint box to enroll before registering.';
     return;
   }
-  students.set(username, { name, password: byId('new-password').value, fingerprint, inside: false, scanned: false });
+  students.set(email, { name, password: byId('new-password').value, enrolled: true, inside: false, scanned: false });
   event.currentTarget.reset();
   byId('register-error').textContent = '';
-  byId('username').value = username;
+  resetEnrollment();
+  byId('username').value = email;
   byId('error').textContent = 'Account created. Log in with your new password.';
   show('login');
 });
@@ -133,7 +148,7 @@ function renderAttendance() {
   byId('month').textContent = today.toLocaleDateString('en', { month: 'long', year: 'numeric' });
   byId('status').textContent = 'Your mess is currently ' + (inside ? 'IN' : 'OUT');
   byId('toggle').setAttribute('aria-pressed', String(inside));
-  byId('scan-button').textContent = inside ? 'Scan & Exit Mess' : 'Scan & Enter Mess';
+  byId('scan-button').textContent = inside ? 'Simulate Scan & Exit Mess' : 'Simulate Scan & Enter Mess';
   byId('week').replaceChildren(...Array.from({ length: 7 }, (_, index) => {
     const day = new Date(today);
     day.setDate(today.getDate() - (6 - index));
@@ -148,13 +163,13 @@ function renderAttendance() {
 byId('biometric').addEventListener('submit', event => {
   event.preventDefault();
   if (!signedIn) return;
-  if (normalizeFingerprint(byId('scan-id').value) !== signedIn.fingerprint) {
-    byId('scan-message').textContent = 'Fingerprint ID does not match this account.';
+  if (!signedIn.enrolled) {
+    byId('scan-message').textContent = 'No fingerprint is enrolled for this account.';
     return;
   }
   signedIn.inside = inside = !inside;
   signedIn.scanned = scanned = true;
-  byId('scan-message').textContent = inside ? 'Entry recorded (demo).' : 'Exit recorded (demo).';
+  byId('scan-message').textContent = inside ? 'Entry recorded (simulated).' : 'Exit recorded (demo).';
   event.currentTarget.reset();
   renderAttendance();
 });

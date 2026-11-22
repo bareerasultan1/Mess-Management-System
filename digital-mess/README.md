@@ -2,7 +2,7 @@
 
 ## Mobile UI preview
 
-Open `preview.html` in a browser to try the landing page, demo login, dashboard, Mess In/Out screen, and profile. Use `ali` / `Mess@1234`. This standalone design preview simulates login and scans in browser memory; use the Java console and PostgreSQL setup below to test real authentication and attendance persistence.
+Open `preview.html` in a browser. Register with a fictional student email and password, then tap the fingerprint box to simulate enrollment. You can also sign in with `ali@example.edu` / `Mess@1234`. Open **Mess In/Out** and tap the scan box to simulate entry or exit. The preview does not read or match real fingerprints, verify email ownership, or save to PostgreSQL. The Java console below still uses usernames.
 
 Milestone 2 - SE423. This branch contains **Module 1: Automated Attendance Engine** (owner: Bareera Sultan),
 limited to **user login** and **mess in / out scanning**. Billing, inventory and complaints belong to the other modules.
